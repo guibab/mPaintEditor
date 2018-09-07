@@ -90,13 +90,13 @@
        </property>
        <property name="minimumSize">
         <size>
-         <width>225</width>
+         <width>172</width>
          <height>48</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>225</width>
+         <width>200</width>
          <height>48</height>
         </size>
        </property>
@@ -105,7 +105,7 @@
          <rect>
           <x>2</x>
           <y>1</y>
-          <width>61</width>
+          <width>50</width>
           <height>23</height>
          </rect>
         </property>
@@ -125,9 +125,9 @@
        <widget class="QPushButton" name="rmv_btn">
         <property name="geometry">
          <rect>
-          <x>62</x>
+          <x>51</x>
           <y>1</y>
-          <width>61</width>
+          <width>50</width>
           <height>23</height>
          </rect>
         </property>
@@ -146,7 +146,7 @@
          <rect>
           <x>2</x>
           <y>22</y>
-          <width>61</width>
+          <width>50</width>
           <height>23</height>
          </rect>
         </property>
@@ -163,9 +163,9 @@
        <widget class="QPushButton" name="abs_btn">
         <property name="geometry">
          <rect>
-          <x>62</x>
+          <x>51</x>
           <y>22</y>
-          <width>61</width>
+          <width>50</width>
           <height>23</height>
          </rect>
         </property>
@@ -182,9 +182,9 @@
        <widget class="QPushButton" name="smooth_btn">
         <property name="geometry">
          <rect>
-          <x>122</x>
+          <x>100</x>
           <y>1</y>
-          <width>101</width>
+          <width>70</width>
           <height>23</height>
          </rect>
         </property>
@@ -201,9 +201,9 @@
        <widget class="QPushButton" name="sharpen__btn">
         <property name="geometry">
          <rect>
-          <x>122</x>
+          <x>100</x>
           <y>22</y>
-          <width>101</width>
+          <width>70</width>
           <height>23</height>
          </rect>
         </property>
@@ -250,7 +250,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pinSelection">
+      <widget class="QPushButton" name="pinSelection_btn">
        <property name="maximumSize">
         <size>
          <width>23</width>
@@ -259,6 +259,9 @@
        </property>
        <property name="text">
         <string>pin</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

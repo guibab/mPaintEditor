@@ -8,14 +8,24 @@ from Qt import QtGui, QtCore, QtWidgets
 from functools import partial
 from maya import cmds, OpenMaya
 import blurdev
+import os
 from studio.gui.resource import Icons
-
+from mWeightEditor.tools.skinData import DataOfSkin
 from mWeightEditor.tools.spinnerSlider import ValueSetting, ButtonWithValue
+
+
+def getIcon(iconNm):
+    fileVar = os.path.realpath(__file__)
+    uiFolder, filename = os.path.split(fileVar)
+    iconPth = os.path.join(uiFolder, "img", iconNm + ".png")
+    return QtGui.QIcon(iconPth)
 
 
 _icons = {
     "lock": Icons.getIcon(r"icons8\Android_L\PNG\48\Very_Basic\lock-48"),
     "unlock": Icons.getIcon(r"icons8\Android_L\PNG\48\Very_Basic\unlock-48"),
+    "pinOn": getIcon("pinOn"),
+    "pinOff": getIcon("pinOff"),
     "refresh": Icons.getIcon("refresh"),
 }
 styleSheet = """
@@ -103,10 +113,13 @@ class SkinPaintWin(QtWidgets.QDialog):
     colWidth = 30
     maxWidthCentralWidget = 230
 
-    def addMinButton(self):
-        # self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowMinimizeButtonHint)
-        self.setWindowFlags(QtCore.Qt.Window)
+    def getSkinClusterValues(self, skinCluster):
+        driverNames = cmds.skinCluster(skinCluster, q=True, inf=True)
+        skinningMethod = cmds.getAttr(skinCluster + ".skinningMethod")
+        normalizeWeights = cmds.getAttr(skinCluster + ".normalizeWeights")
+        return (driverNames, skinningMethod, normalizeWeights)
 
+    #####################################################################################
     def __init__(self, parent=None):
         super(SkinPaintWin, self).__init__(parent)
         import __main__
@@ -116,6 +129,13 @@ class SkinPaintWin(QtWidgets.QDialog):
         if not cmds.pluginInfo("blurSkin", query=True, loaded=True):
             cmds.loadPlugin("blurSkin")
         blurdev.gui.loadUi(__file__, self)
+
+        self.useShortestNames = (
+            cmds.optionVar(q="useShortestNames")
+            if cmds.optionVar(exists="useShortestNames")
+            else True
+        )
+        self.dataOfSkin = DataOfSkin(useShortestNames=self.useShortestNames)
 
         self.createWindow()
         self.setStyleSheet(styleSheet)
@@ -144,7 +164,7 @@ class SkinPaintWin(QtWidgets.QDialog):
         super(SkinPaintWin, self).closeEvent(event)
 
     def doAddValue(self, val):
-        print val
+        self.valueSetter.theProgress.applyVal(val)
 
     def addButtonsDirectSet(self, lstBtns):
         theCarryWidget = QtWidgets.QWidget()
@@ -170,17 +190,30 @@ class SkinPaintWin(QtWidgets.QDialog):
             self.lock_btn.setIcon(_icons["unlock"])
         self.unLock = not val
 
+    def changePin(self, val):
+        if val:
+            self.pinSelection_btn.setIcon(_icons["pinOn"])
+        else:
+            self.pinSelection_btn.setIcon(_icons["pinOff"])
+        self.unPin = not val
+
     def createWindow(self):
         self.unLock = True
+        self.unPin = True
         dialogLayout = self.layout()
 
         self.lock_btn.setIcon(_icons["unlock"])
         self.refresh_btn.setIcon(_icons["refresh"])
         self.lock_btn.toggled.connect(self.changeLock)
         self.refresh_btn.clicked.connect(self.refreshBtn)
-        for nm in ["lock", "refresh"]:
+
+        self.pinSelection_btn.setIcon(_icons["pinOff"])
+        self.pinSelection_btn.toggled.connect(self.changePin)
+
+        for nm in ["lock", "refresh", "pinSelection"]:
             self.__dict__[nm + "_btn"].setText("")
         self.valueSetter = ValueSetting(self)
+        self.valueSetter.setAddMode(False, autoReset=False)
         Hlayout = QtWidgets.QHBoxLayout(self)
         Hlayout.setContentsMargins(0, 0, 0, 0)
         Hlayout.setSpacing(0)
@@ -207,7 +240,13 @@ class SkinPaintWin(QtWidgets.QDialog):
         # self.retrieveSelection ()
 
     def refresh(self, force=False):
-        pass
+        self.dataOfSkin.getAllData(displayLocator=False)
+        self.joints_tree.clear()
+        for nm in self.dataOfSkin.shortDriverNames:
+            jointItem = QtWidgets.QTreeWidgetItem()
+            jointItem.setText(1, str(nm))
+
+            self.joints_tree.addTopLevelItem(jointItem)
 
 
 # -------------------------------------------------------------------------------
