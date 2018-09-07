@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>457</width>
+    <width>293</width>
     <height>578</height>
    </rect>
   </property>
@@ -90,7 +90,7 @@
        </property>
        <property name="minimumSize">
         <size>
-         <width>228</width>
+         <width>190</width>
          <height>48</height>
         </size>
        </property>
@@ -105,7 +105,7 @@
          <rect>
           <x>2</x>
           <y>1</y>
-          <width>50</width>
+          <width>42</width>
           <height>23</height>
          </rect>
         </property>
@@ -125,9 +125,9 @@
        <widget class="QPushButton" name="rmv_btn">
         <property name="geometry">
          <rect>
-          <x>51</x>
+          <x>42</x>
           <y>1</y>
-          <width>50</width>
+          <width>42</width>
           <height>23</height>
          </rect>
         </property>
@@ -146,7 +146,7 @@
          <rect>
           <x>2</x>
           <y>22</y>
-          <width>50</width>
+          <width>42</width>
           <height>23</height>
          </rect>
         </property>
@@ -163,9 +163,9 @@
        <widget class="QPushButton" name="abs_btn">
         <property name="geometry">
          <rect>
-          <x>51</x>
+          <x>42</x>
           <y>22</y>
-          <width>50</width>
+          <width>42</width>
           <height>23</height>
          </rect>
         </property>
@@ -182,9 +182,9 @@
        <widget class="QPushButton" name="smooth_btn">
         <property name="geometry">
          <rect>
-          <x>100</x>
+          <x>82</x>
           <y>1</y>
-          <width>70</width>
+          <width>55</width>
           <height>23</height>
          </rect>
         </property>
@@ -201,9 +201,9 @@
        <widget class="QPushButton" name="sharpen_btn">
         <property name="geometry">
          <rect>
-          <x>100</x>
+          <x>82</x>
           <y>22</y>
-          <width>70</width>
+          <width>55</width>
           <height>23</height>
          </rect>
         </property>
@@ -220,7 +220,7 @@
        <widget class="QWidget" name="verticalLayoutWidget">
         <property name="geometry">
          <rect>
-          <x>179</x>
+          <x>142</x>
           <y>2</y>
           <width>46</width>
           <height>41</height>
@@ -251,16 +251,19 @@
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <property name="sizeConstraint">
+      <enum>QLayout::SetMinimumSize</enum>
+     </property>
      <item>
       <widget class="QPushButton" name="enterPaint_btn">
        <property name="maximumSize">
         <size>
-         <width>16777215</width>
+         <width>50</width>
          <height>18</height>
         </size>
        </property>
        <property name="text">
-        <string>enter paint</string>
+        <string>paint</string>
        </property>
       </widget>
      </item>
@@ -268,12 +271,12 @@
       <widget class="QPushButton" name="pickVertex_btn">
        <property name="maximumSize">
         <size>
-         <width>16777215</width>
+         <width>55</width>
          <height>18</height>
         </size>
        </property>
        <property name="text">
-        <string>pick vertex</string>
+        <string>pick vert</string>
        </property>
       </widget>
      </item>
@@ -281,14 +284,27 @@
       <widget class="QPushButton" name="pickInfluence_btn">
        <property name="maximumSize">
         <size>
-         <width>16777215</width>
+         <width>55</width>
          <height>18</height>
         </size>
        </property>
        <property name="text">
-        <string>pick influence</string>
+        <string>pick jnt</string>
        </property>
       </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_3">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
      </item>
      <item>
       <widget class="QPushButton" name="undo_btn">

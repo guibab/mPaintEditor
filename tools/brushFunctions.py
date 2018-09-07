@@ -121,7 +121,7 @@ class BrushFunctions:
             runOnce=False, attributeChange=[self.bsd + ".paintAttr", self.callAfterPaint]
         )
 
-    def deleteTheJobs(self, toSearch="function callAfterPaint"):
+    def deleteTheJobs(self, toSearch="BrushFunctions.callAfterPaint"):
         res = cmds.scriptJob(listJobs=True)
         for job in res:
             if toSearch in job:
