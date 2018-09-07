@@ -339,7 +339,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QTreeWidget" name="joints_tree">
+    <widget class="QTreeWidget" name="uiInfluenceTREE">
      <property name="selectionMode">
       <enum>QAbstractItemView::ExtendedSelection</enum>
      </property>

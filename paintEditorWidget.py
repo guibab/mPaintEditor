@@ -146,6 +146,9 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.setStyleSheet(styleSheet)
         self.setWindowDisplay()
 
+        self.addCallBacks()
+        self.refresh()
+
     def setWindowDisplay(self):
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.Tool)
         self.setWindowTitle("Paint Editor")
@@ -158,8 +161,23 @@ class SkinPaintWin(QtWidgets.QDialog):
             self.move(vals[0], vals[1])
             self.resize(vals[2], vals[3])
 
+    def addCallBacks(self):
+        self.refreshSJ = cmds.scriptJob(event=["SelectionChanged", self.refresh])
+        """
+        #self.listJobEvents =[refreshSJ] 
+        sceneUpdateCallback = OpenMaya.MSceneMessage.addCallback(OpenMaya.MSceneMessage.kBeforeNew, self.deselectAll )  #kSceneUpdate
+        self.close_callback = [sceneUpdateCallback]
+        self.close_callback.append (  OpenMaya.MSceneMessage.addCallback(OpenMaya.MSceneMessage.kBeforeOpen, self.deselectAll )  )
+        """
+
+    def deleteCallBacks(self):
+        self.brushFunctions.deleteTheJobs(toSearch="function callAfterPaint")
+        # self.dataOfSkin.deleteDisplayLocator ()
+        cmds.scriptJob(kill=self.refreshSJ, force=True)
+        # for callBck in self.close_callback : OpenMaya.MSceneMessage.removeCallback(callBck)
+
     def closeEvent(self, event):
-        # self.deleteCallBacks ()
+        self.deleteCallBacks()
         pos = self.pos()
         size = self.size()
         cmds.optionVar(clearArray="SkinPaintWindow")
@@ -204,10 +222,13 @@ class SkinPaintWin(QtWidgets.QDialog):
 
     def enterPaint(self):
         self.brushFunctions.setColorsOnJoints()
-        self.brushFunctions.bsd = self.dataOfSkin.getConnectedBlurskinDisplay()
-        if not self.brushFunctions.bsd:
-            self.brushFunctions.addColorNode()
-        self.brushFunctions.enterPaint()
+        if self.dataOfSkin.theSkinCluster:
+            self.brushFunctions.bsd = self.dataOfSkin.getConnectedBlurskinDisplay()
+            if not self.brushFunctions.bsd:
+                self.brushFunctions.doAddColorNode(
+                    self.dataOfSkin.deformedShape, self.dataOfSkin.theSkinCluster
+                )
+            self.brushFunctions.enterPaint()
 
     def updateOptionEnable(self, toggleValue):
         setOn = self.smooth_btn.isChecked() or self.sharpen_btn.isChecked()
@@ -253,17 +274,12 @@ class SkinPaintWin(QtWidgets.QDialog):
         )
         self.smoothOption_lay.addWidget(self.repeatBTN)
         self.smoothOption_lay.addWidget(self.depthBTN)
-        """
-        self.repeatBTN.move(173,1)
-        self.depthBTN.move(173,22)
-        for btn in [self.repeatBTN, self.depthBTN]:
-            btn.resize(30,22)
-            btn.show()
-        """
+
+        self.uiInfluenceTREE.itemSelectionChanged.connect(self.influenceSelChanged)
 
         for ind, nm in enumerate(["add", "rmv", "addPerc", "abs", "smooth", "sharpen"]):
             thebtn = self.__dict__[nm + "_btn"]
-            thebtn.clicked.connect(partial(self.brushFunctions.setInfluenceIndex, ind))
+            thebtn.clicked.connect(partial(self.brushFunctions.setPaintMode, ind))
         self.smooth_btn.toggled.connect(self.updateOptionEnable)
         self.sharpen_btn.toggled.connect(self.updateOptionEnable)
         self.updateOptionEnable(True)
@@ -287,7 +303,7 @@ class SkinPaintWin(QtWidgets.QDialog):
         Hlayout2.setSpacing(0)
         Hlayout2.addWidget(self.widgetAbs)
 
-        # dialogLayout.insertSpacing (1,0)
+        dialogLayout.insertSpacing(1, 10)
         dialogLayout.insertLayout(1, Hlayout)
         dialogLayout.insertLayout(1, Hlayout2)
         dialogLayout.insertSpacing(1, 10)
@@ -341,19 +357,32 @@ class SkinPaintWin(QtWidgets.QDialog):
                     influences = cmds.skinCluster(skinClus, q=True, influence=True)
                     maxVal, maxInfluence = sorted(zip(values, influences), reverse=True)[0]
                     listCurrentInfluences = [
-                        self.joints_tree.topLevelItem(i).text(1)
-                        for i in range(self.joints_tree.topLevelItemCount())
+                        self.uiInfluenceTREE.topLevelItem(i).text(1)
+                        for i in range(self.uiInfluenceTREE.topLevelItemCount())
                     ]
                     print maxVal, maxInfluence
                     if maxInfluence in listCurrentInfluences:
                         ind = listCurrentInfluences.index(maxInfluence)
-                        itemDeformer = self.joints_tree.topLevelItem(ind)
-                        self.joints_tree.setCurrentItem(itemDeformer)
+                        itemDeformer = self.uiInfluenceTREE.topLevelItem(ind)
+                        self.uiInfluenceTREE.setCurrentItem(itemDeformer)
                     # theCommand = "selectMode -object;ArtPaintSkinWeightsToolOptions;setSmoothSkinInfluence {0};artSkinRevealSelected artAttrSkinPaintCtx;".format (maxInfluence)
                     # cmds.evalDeferred( partial ( mel.eval ,theCommand))
                     cmds.evalDeferred(
                         partial(mel.eval, "changeSelectMode -hierarchical;setToolTo $gMove;")
                     )
+
+    def selectedInfluences(self):
+        return [item.influence() for item in self.uiInfluenceTREE.selectedItems()]
+
+    def influenceSelChanged(self):
+        influences = self.selectedInfluences()
+        if len(influences) > 0:
+            print influences
+            toSel = influences[0]
+            ind = self.dataOfSkin.driverNames.index(influences[0])
+            self.brushFunctions.setInfluenceIndex(ind)
+        else:
+            print "clear influence"
 
     def refreshBtn(self):
         # self.storeSelection ()
@@ -362,13 +391,14 @@ class SkinPaintWin(QtWidgets.QDialog):
 
     def refresh(self, force=False):
         self.dataOfSkin.getAllData(displayLocator=False)
-        self.joints_tree.clear()
+        self.brushFunctions.bsd = self.dataOfSkin.getConnectedBlurskinDisplay()
+        self.uiInfluenceTREE.clear()
         for nm in self.dataOfSkin.driverNames:  # .shortDriverNames :
             jointItem = InfluenceTreeWidgetItem(nm)
             # jointItem =  QtWidgets.QTreeWidgetItem()
             # jointItem.setText (1, nm)
 
-            self.joints_tree.addTopLevelItem(jointItem)
+            self.uiInfluenceTREE.addTopLevelItem(jointItem)
 
 
 # -------------------------------------------------------------------------------
