@@ -6,12 +6,13 @@ from Qt import QtGui, QtCore, QtWidgets
 
 # import shiboken2 as shiboken
 from functools import partial
-from maya import cmds, OpenMaya
+from maya import cmds, mel, OpenMaya
 import blurdev
 import os
 from studio.gui.resource import Icons
 from mWeightEditor.tools.skinData import DataOfSkin
 from mWeightEditor.tools.spinnerSlider import ValueSetting, ButtonWithValue
+from tools.brushFunctions import BrushFunctions
 
 
 def getIcon(iconNm):
@@ -98,6 +99,8 @@ HorizHeaderView{
     border : 0px solid black;
 }
 """
+
+
 ###################################################################################
 #
 #   the window
@@ -136,6 +139,8 @@ class SkinPaintWin(QtWidgets.QDialog):
             else True
         )
         self.dataOfSkin = DataOfSkin(useShortestNames=self.useShortestNames)
+
+        self.brushFunctions = BrushFunctions()
 
         self.createWindow()
         self.setStyleSheet(styleSheet)
@@ -197,6 +202,18 @@ class SkinPaintWin(QtWidgets.QDialog):
             self.pinSelection_btn.setIcon(_icons["pinOff"])
         self.unPin = not val
 
+    def enterPaint(self):
+        self.brushFunctions.setColorsOnJoints()
+        self.brushFunctions.bsd = self.dataOfSkin.getConnectedBlurskinDisplay()
+        if not self.brushFunctions.bsd:
+            self.brushFunctions.addColorNode()
+        self.brushFunctions.enterPaint()
+
+    def updateOptionEnable(self, toggleValue):
+        setOn = self.smooth_btn.isChecked() or self.sharpen_btn.isChecked()
+        for btn in [self.repeatBTN, self.depthBTN]:
+            btn.setEnabled(setOn)
+
     def createWindow(self):
         self.unLock = True
         self.unPin = True
@@ -206,9 +223,50 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.refresh_btn.setIcon(_icons["refresh"])
         self.lock_btn.toggled.connect(self.changeLock)
         self.refresh_btn.clicked.connect(self.refreshBtn)
+        self.enterPaint_btn.clicked.connect(self.enterPaint)
 
         self.pinSelection_btn.setIcon(_icons["pinOff"])
         self.pinSelection_btn.toggled.connect(self.changePin)
+        self.pickVertex_btn.clicked.connect(self.pickMaxInfluence)
+        self.undo_btn.clicked.connect(self.brushFunctions.callUndo)
+
+        self.repeatBTN = ButtonWithValue(
+            self.buttonWidg,
+            usePow=False,
+            name="iter",
+            minimumValue=1,
+            defaultValue=1,
+            step=1,
+            clickable=False,
+            minHeight=20,
+        )
+        self.depthBTN = ButtonWithValue(
+            self.buttonWidg,
+            usePow=False,
+            name="dpth",
+            minimumValue=1,
+            maximumValue=9,
+            defaultValue=1,
+            step=1,
+            clickable=False,
+            minHeight=20,
+        )
+        self.smoothOption_lay.addWidget(self.repeatBTN)
+        self.smoothOption_lay.addWidget(self.depthBTN)
+        """
+        self.repeatBTN.move(173,1)
+        self.depthBTN.move(173,22)
+        for btn in [self.repeatBTN, self.depthBTN]:
+            btn.resize(30,22)
+            btn.show()
+        """
+
+        for ind, nm in enumerate(["add", "rmv", "addPerc", "abs", "smooth", "sharpen"]):
+            thebtn = self.__dict__[nm + "_btn"]
+            thebtn.clicked.connect(partial(self.brushFunctions.setInfluenceIndex, ind))
+        self.smooth_btn.toggled.connect(self.updateOptionEnable)
+        self.sharpen_btn.toggled.connect(self.updateOptionEnable)
+        self.updateOptionEnable(True)
 
         for nm in ["lock", "refresh", "pinSelection"]:
             self.__dict__[nm + "_btn"].setText("")
@@ -234,6 +292,69 @@ class SkinPaintWin(QtWidgets.QDialog):
         dialogLayout.insertLayout(1, Hlayout2)
         dialogLayout.insertSpacing(1, 10)
 
+    # --------------------------------------------------------------
+    # artAttrSkinPaintCtx
+    # --------------------------------------------------------------
+    def pickMaxInfluence(self):
+        ctxArgs = {
+            "title": "Select vertex influence",
+            #'finalCommandScript ':"python (\"finishTheSelection()\");",
+            "toolStart": "SelectVertexMask;",
+            #'toolFinish ':"python (\"self.finalCommandScriptPickVtxInfluence()\");",
+            "toolCursorType": "question",
+            "totalSelectionSets": 1,
+            "cumulativeLists": False,
+            "expandSelectionList": True,
+            "setNoSelectionPrompt": "Select Vertex Influence",
+            "setSelectionPrompt": "Never used",
+            "setDoneSelectionPrompt": "Never used because setAutoComplete is set",
+            "setAutoToggleSelection": True,
+            "setSelectionCount": 1,
+            "setAutoComplete": True,
+        }
+        if not cmds.scriptCtx("SelectVertexSkinInfluence", q=True, exists=True):
+            ctxSelection = cmds.scriptCtx(name="SelectVertexSkinInfluence", **ctxArgs)
+        else:
+            cmds.scriptCtx("SelectVertexSkinInfluence", e=True, **ctxArgs)
+
+        import __main__
+
+        __main__.BLRpickVtxInfluence = self.finalCommandScriptPickVtxInfluence
+        cmds.scriptCtx(
+            "SelectVertexSkinInfluence", e=True, toolFinish='python ("BLRpickVtxInfluence()");'
+        )
+        cmds.setToolTo("SelectVertexSkinInfluence")
+
+    # --------------------------------------------------------------
+    # Pick Vtx Influence
+    # --------------------------------------------------------------
+    def finalCommandScriptPickVtxInfluence(self):
+        theSelection = cmds.ls(sl=True)
+        if theSelection:
+            vtx = theSelection[0]
+            hist = cmds.listHistory(vtx, lv=0, pruneDagObjects=True)
+            if hist:
+                skinClusters = cmds.ls(hist, type="skinCluster")
+                if skinClusters:
+                    skinClus = skinClusters[0]
+                    values = cmds.skinPercent(skinClus, vtx, query=True, value=True)
+                    influences = cmds.skinCluster(skinClus, q=True, influence=True)
+                    maxVal, maxInfluence = sorted(zip(values, influences), reverse=True)[0]
+                    listCurrentInfluences = [
+                        self.joints_tree.topLevelItem(i).text(1)
+                        for i in range(self.joints_tree.topLevelItemCount())
+                    ]
+                    print maxVal, maxInfluence
+                    if maxInfluence in listCurrentInfluences:
+                        ind = listCurrentInfluences.index(maxInfluence)
+                        itemDeformer = self.joints_tree.topLevelItem(ind)
+                        self.joints_tree.setCurrentItem(itemDeformer)
+                    # theCommand = "selectMode -object;ArtPaintSkinWeightsToolOptions;setSmoothSkinInfluence {0};artSkinRevealSelected artAttrSkinPaintCtx;".format (maxInfluence)
+                    # cmds.evalDeferred( partial ( mel.eval ,theCommand))
+                    cmds.evalDeferred(
+                        partial(mel.eval, "changeSelectMode -hierarchical;setToolTo $gMove;")
+                    )
+
     def refreshBtn(self):
         # self.storeSelection ()
         self.refresh(force=True)
@@ -242,9 +363,10 @@ class SkinPaintWin(QtWidgets.QDialog):
     def refresh(self, force=False):
         self.dataOfSkin.getAllData(displayLocator=False)
         self.joints_tree.clear()
-        for nm in self.dataOfSkin.shortDriverNames:
-            jointItem = QtWidgets.QTreeWidgetItem()
-            jointItem.setText(1, str(nm))
+        for nm in self.dataOfSkin.driverNames:  # .shortDriverNames :
+            jointItem = InfluenceTreeWidgetItem(nm)
+            # jointItem =  QtWidgets.QTreeWidgetItem()
+            # jointItem.setText (1, nm)
 
             self.joints_tree.addTopLevelItem(jointItem)
 
@@ -266,8 +388,7 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
     ]
 
     def __init__(self, influence):
-        influence = dcc.maya.cast.toMFn(influence)
-        super(InfluenceTreeWidgetItem, self).__init__(["", influence.name()])
+        super(InfluenceTreeWidgetItem, self).__init__(["", influence])
         self._influence = influence
 
         self.setDisplay()
@@ -277,8 +398,7 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         self.setIcon(1, self.lockIcon())
 
     def setColor(self, index):
-        objAsStr = dcc.maya.cast.toPath(self._influence)
-        cmds.setAttr(objAsStr + ".objectColor", index)
+        cmds.setAttr(self._influence + ".objectColor", index)
 
         theCol = [col / 250.0 for col in self._colors[index]]
         cmds.setAttr(objAsStr + ".overrideColorRGB", *theCol)
@@ -286,17 +406,13 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         self.setDisplay()
 
     def color(self):
-        return self._colors[cmds.getAttr(dcc.maya.cast.toPath(self._influence) + ".objectColor")]
+        return self._colors[cmds.getAttr(self._influence + ".objectColor")]
 
     def lockIcon(self):
-        return (
-            IconsLibrary.getIcon("lock")
-            if self.isLocked()
-            else IconsLibrary.getIcon("lock-gray-unlocked")
-        )
+        return Icons.getIcon("lock") if self.isLocked() else Icons.getIcon("lock-gray-unlocked")
 
     def colorIcon(self):
-        pixmap = QtGui.QPixmap(12, 12)
+        pixmap = QtGui.QPixmap(24, 24)
         pixmap.fill(QtGui.QColor(*self.color()))
         return QtGui.QIcon(pixmap)
 
@@ -305,13 +421,13 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         self.setHidden(not visible)
 
     def setLocked(self, locked):
-        self._influence.findPlug("lockInfluenceWeights").setBool(locked)
+        cmds.setAttr(self._influence + ".lockInfluenceWeights", locked)
         if locked:
             self.setSelected(False)
         self.setDisplay()
 
     def isLocked(self):
-        return self._influence.findPlug("lockInfluenceWeights").asBool()
+        return cmds.getAttr(self._influence + ".lockInfluenceWeights")
 
     def influence(self):
         return self._influence

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>457</width>
-    <height>911</height>
+    <height>578</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -81,7 +81,7 @@
       </spacer>
      </item>
      <item>
-      <widget class="QWidget" name="widget" native="true">
+      <widget class="QWidget" name="buttonWidg" native="true">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -90,13 +90,13 @@
        </property>
        <property name="minimumSize">
         <size>
-         <width>172</width>
+         <width>228</width>
          <height>48</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>200</width>
+         <width>250</width>
          <height>48</height>
         </size>
        </property>
@@ -198,7 +198,7 @@
          <bool>true</bool>
         </property>
        </widget>
-       <widget class="QPushButton" name="sharpen__btn">
+       <widget class="QPushButton" name="sharpen_btn">
         <property name="geometry">
          <rect>
           <x>100</x>
@@ -217,6 +217,21 @@
          <bool>true</bool>
         </property>
        </widget>
+       <widget class="QWidget" name="verticalLayoutWidget">
+        <property name="geometry">
+         <rect>
+          <x>179</x>
+          <y>2</y>
+          <width>46</width>
+          <height>41</height>
+         </rect>
+        </property>
+        <layout class="QVBoxLayout" name="smoothOption_lay">
+         <property name="spacing">
+          <number>1</number>
+         </property>
+        </layout>
+       </widget>
       </widget>
      </item>
      <item>
@@ -231,6 +246,62 @@
         </size>
        </property>
       </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QPushButton" name="enterPaint_btn">
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>18</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>enter paint</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pickVertex_btn">
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>18</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>pick vertex</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pickInfluence_btn">
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>18</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>pick influence</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="undo_btn">
+       <property name="maximumSize">
+        <size>
+         <width>40</width>
+         <height>18</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>undo</string>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
