@@ -21,6 +21,7 @@ class BrushFunctions:
         mel.eval("source artAttrCreateMenuItems.mel")
         if not cmds.pluginInfo("blurSkin", query=True, loaded=True):
             cmds.loadPlugin("blurSkin")
+        cmds.makePaintable("blurSkinDisplay", "paintAttr")
 
     def setColorsOnJoints(self):
         _colors = []
@@ -56,6 +57,8 @@ class BrushFunctions:
         return ""
 
     def doAddColorNode(self, msh, skinCluster):
+        print msh, skinCluster
+        print "doAddColorNode"
         cmds.setAttr(msh + ".displayColors", True)
 
         skinConn, inConn = cmds.listConnections(
@@ -70,6 +73,7 @@ class BrushFunctions:
         cmds.evalDeferred(
             partial(cmds.connectAttr, self.bsd + ".weightList", skinCluster + ".weightList", f=True)
         )
+        cmds.makePaintable(self.bsd, "paintAttr")
 
         return self.bsd
 
@@ -82,6 +86,11 @@ class BrushFunctions:
         if cmds.objExists(self.bsd):
             cmds.setAttr(self.bsd + ".influenceIndex", infl)
 
+    def setSmoothOptions(self, repeatVal, depthVal):
+        if cmds.objExists(self.bsd):
+            cmds.setAttr(self.bsd + ".smoothRepeat", repeatVal)
+            cmds.setAttr(self.bsd + ".smoothDepth", depthVal)
+
     def callUndo(self):
         if cmds.objExists(self.bsd):
             cmds.setAttr(self.bsd + ".callUndo", True)
@@ -92,16 +101,15 @@ class BrushFunctions:
         nbAtt = cmds.getAttr(self.bsd + ".wl", size=True)
         val = [0] * nbAtt
         cmds.setAttr(self.bsd + ".paintAttr", val, type="doubleArray")
-        cmds.makePaintable("blurSkinDisplay", "paintAttr")
-        cmds.makePaintable(self.bsd, "paintAttr")
 
         msh = cmds.ls(cmds.listHistory(self.bsd, af=True, f=True), type="mesh")[0]
         (prt,) = cmds.listRelatives(msh, p=True, path=True)
 
-        cmds.select(prt)
+        sel = cmds.ls(sl=True)
+        if prt not in sel:
+            cmds.select(prt)
         mel.eval('artSetToolAndSelectAttr( "artAttrCtx", "{0}.paintAttr" );'.format(self.bsd))
         cmds.ArtPaintAttrTool()
-
         # fcProc = createMelProcedure(self.finalPaintBrush, [('int','slot')])
         # import __main__
         # __main__.applyCallBack = True
