@@ -291,7 +291,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="gauss_btn">
+       <widget class="QPushButton" name="gaussian_btn">
         <property name="minimumSize">
          <size>
           <width>24</width>
@@ -369,7 +369,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="rect_btn">
+       <widget class="QPushButton" name="square_btn">
         <property name="minimumSize">
          <size>
           <width>24</width>
@@ -506,7 +506,7 @@
       <number>2</number>
      </property>
      <item>
-      <widget class="QLineEdit" name="searchJoints">
+      <widget class="QLineEdit" name="searchInfluences_le">
        <property name="text">
         <string/>
        </property>

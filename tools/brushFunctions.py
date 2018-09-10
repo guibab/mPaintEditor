@@ -87,6 +87,13 @@ class BrushFunctions:
         if cmds.objExists(self.bsd):
             cmds.setAttr(self.bsd + ".command", mode)
 
+    def setStampProfile(self, profile):
+        cmds.artAttrCtx("artAttrContext", edit=True, stampProfile=profile)
+
+    def togglePostSetting(self, val):
+        if cmds.objExists(self.bsd):
+            cmds.setAttr(self.bsd + ".postSetting", val)
+
     def setInfluenceIndex(self, infl):
         if cmds.objExists(self.bsd):
             cmds.setAttr(self.bsd + ".influenceIndex", infl)
