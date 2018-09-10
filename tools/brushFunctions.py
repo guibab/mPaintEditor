@@ -16,12 +16,17 @@ from functools import partial
 
 # from dcc.maya import createMelProcedure
 class BrushFunctions:
-    def __init__(self):
+    def __init__(self, mainWindow=None):
+        self.mainWindow = mainWindow
         self.bsd = ""
         mel.eval("source artAttrCreateMenuItems.mel")
         if not cmds.pluginInfo("blurSkin", query=True, loaded=True):
             cmds.loadPlugin("blurSkin")
         cmds.makePaintable("blurSkinDisplay", "paintAttr")
+        import __main__
+
+        __main__.BLURpaintSkinOnProc = self.paintSkinOnProc
+        __main__.BLURpaintSkinOffProc = self.paintSkinOffProc
 
     def setColorsOnJoints(self):
         _colors = []
@@ -95,6 +100,14 @@ class BrushFunctions:
         if cmds.objExists(self.bsd):
             cmds.setAttr(self.bsd + ".callUndo", True)
 
+    def paintSkinOnProc(self):
+        print "--- entering blur skin Paint -----"
+        self.mainWindow.EVENTCATCHER.open()
+
+    def paintSkinOffProc(self):
+        print "--- exiting blur skin Paint -----"
+        self.mainWindow.EVENTCATCHER.removeFilters()
+
     def enterPaint(self):
         self.deleteTheJobs(toSearch="function callAfterPaint")
 
@@ -114,15 +127,17 @@ class BrushFunctions:
         # import __main__
         # __main__.applyCallBack = True
         self.createScriptJob()
-        cmds.artAttrCtx(
-            cmds.currentCtx(),
-            edit=True,
-            outline=True,
-            colorfeedback=False,
-            clamp="both",
-            clamplower=0.0,
-            clampupper=1.0,
-        )  # , afterStrokeCmd='print "PAINT"')
+
+        paintArgs = {
+            "outline": True,
+            "colorfeedback": False,
+            "clamp": "both",
+            "clamplower": 0.0,
+            "clampupper": 1.0,
+            "toolOnProc": 'python ("BLURpaintSkinOnProc()");',
+            "toolOffProc": 'python ("BLURpaintSkinOffProc()");',
+        }
+        cmds.artAttrCtx(cmds.currentCtx(), edit=True, **paintArgs)
 
     def createScriptJob(self):
         theJob = cmds.scriptJob(

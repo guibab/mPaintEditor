@@ -13,6 +13,7 @@ from studio.gui.resource import Icons
 from mWeightEditor.tools.skinData import DataOfSkin
 from mWeightEditor.tools.spinnerSlider import ValueSetting, ButtonWithValue
 from tools.brushFunctions import BrushFunctions
+from tools.catchEventsUI import CatchEventsWidget
 
 
 class ValueSettingPE(ValueSetting):
@@ -36,6 +37,10 @@ _icons = {
     "unlock": Icons.getIcon(r"icons8\Android_L\PNG\48\Very_Basic\unlock-48"),
     "pinOn": getIcon("pinOn"),
     "pinOff": getIcon("pinOff"),
+    "gauss": getIcon("circleGauss"),
+    "poly": getIcon("circlePoly"),
+    "solid": getIcon("circleSolid"),
+    "rect": getIcon("rect"),
     "refresh": Icons.getIcon("refresh"),
 }
 styleSheet = """
@@ -59,7 +64,7 @@ QPushButton {
     color:  black;
 }
 QPushButton:checked{
-    background-color: rgb(80, 80, 80);
+    background-color: rgb(100, 100, 100);
     color:white;
     border: none; 
 }
@@ -68,7 +73,7 @@ QPushButton:hover{
     border-style: outset;  
 }
 QPushButton:pressed {
-    background-color: rgb(100, 100, 100);
+    background-color: rgb(130, 130, 130);
     color:white;
     border-style: inset;
 }
@@ -132,6 +137,8 @@ class SkinPaintWin(QtWidgets.QDialog):
         return (driverNames, skinningMethod, normalizeWeights)
 
     #####################################################################################
+    EVENTCATCHER = None
+
     def __init__(self, parent=None):
         super(SkinPaintWin, self).__init__(parent)
         import __main__
@@ -149,14 +156,16 @@ class SkinPaintWin(QtWidgets.QDialog):
         )
         self.dataOfSkin = DataOfSkin(useShortestNames=self.useShortestNames)
 
-        self.brushFunctions = BrushFunctions()
+        self.brushFunctions = BrushFunctions(self)
 
         self.createWindow()
         self.setStyleSheet(styleSheet)
         self.setWindowDisplay()
 
-        self.addCallBacks()
+        # self.addCallBacks ()
         self.refresh()
+        if self.EVENTCATCHER == None:
+            self.EVENTCATCHER = CatchEventsWidget(connectedWindow=self)
 
     def setWindowDisplay(self):
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.Tool)
@@ -185,8 +194,7 @@ class SkinPaintWin(QtWidgets.QDialog):
 
     def deleteCallBacks(self):
         self.brushFunctions.deleteTheJobs()
-        # self.dataOfSkin.deleteDisplayLocator ()
-        cmds.scriptJob(kill=self.refreshSJ, force=True)
+        # cmds.scriptJob( kill=self.refreshSJ, force=True)
         # for callBck in self.close_callback : OpenMaya.MSceneMessage.removeCallback(callBck)
 
     commandIndex = -1
@@ -200,6 +208,13 @@ class SkinPaintWin(QtWidgets.QDialog):
             return nmPrev
         return "-1"
 
+    def getEnabledButton(self):
+        for nm in self.commandArray:
+            thebtn = self.__dict__[nm + "_btn"]
+            if thebtn.isChecked():
+                return thebtn
+        return None
+
     def changeCommand(self, newCommand):
         nmPrev = self.storePrevCommandValue()
 
@@ -209,7 +224,7 @@ class SkinPaintWin(QtWidgets.QDialog):
             cmds.optionVar(q=optionVarName) if cmds.optionVar(exists=optionVarName) else 1.0
         )
 
-        print nmPrev, " = ", self.value, "  | ", nmNew, " = ", newCommandValue
+        # print nmPrev, " = ",self.value, "  | ", nmNew ," = ", newCommandValue
         self.commandIndex = newCommand
         self.setBrushValue(newCommandValue)
 
@@ -223,6 +238,8 @@ class SkinPaintWin(QtWidgets.QDialog):
         cmds.optionVar(intValueAppend=("SkinPaintWindow", self.commandIndex))
         self.storePrevCommandValue()
         # self.headerView.deleteLater()
+        if self.EVENTCATCHER != None:
+            self.EVENTCATCHER.close()
         super(SkinPaintWin, self).closeEvent(event)
 
     def setBrushValue(self, val):
@@ -264,7 +281,13 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.brushFunctions.setSmoothOptions(self.repeatBTN.precision, self.depthBTN.precision)
         self.influenceSelChanged()
 
+    def changeOfValue(self):
+        if cmds.currentCtx() == "artAttrContext":
+            currentVal = cmds.artAttrCtx("artAttrContext", q=True, value=True)
+            self.setBrushValue(currentVal)
+
     def enterPaint(self):
+        self.show()
         self.brushFunctions.setColorsOnJoints()
         if self.dataOfSkin.theSkinCluster:
             self.brushFunctions.bsd = self.dataOfSkin.getConnectedBlurskinDisplay()
@@ -334,6 +357,10 @@ class SkinPaintWin(QtWidgets.QDialog):
             thebtn = self.__dict__[nm + "_btn"]
             thebtn.clicked.connect(partial(self.brushFunctions.setPaintMode, ind))
             thebtn.clicked.connect(partial(self.changeCommand, ind))
+        for ind, nm in enumerate(["gauss", "poly", "solid", "rect"]):
+            thebtn = self.__dict__[nm + "_btn"]
+            thebtn.setText("")
+            thebtn.setIcon(_icons[nm])
         self.smooth_btn.toggled.connect(self.updateOptionEnable)
         self.sharpen_btn.toggled.connect(self.updateOptionEnable)
         self.updateOptionEnable(True)
@@ -348,9 +375,7 @@ class SkinPaintWin(QtWidgets.QDialog):
         Hlayout.addWidget(self.valueSetter)
         self.valueSetter.setMaximumSize(self.maxWidthCentralWidget, 18)
 
-        self.widgetAbs = self.addButtonsDirectSet(
-            [0, 10, 25, 100.0 / 3, 50, 200 / 3.0, 75, 90, 100]
-        )
+        self.widgetAbs = self.addButtonsDirectSet([0, 1, 2, 5, 10, 25, 50, 75, 100])
 
         Hlayout2 = QtWidgets.QHBoxLayout(self)
         Hlayout2.setContentsMargins(0, 0, 0, 0)
@@ -366,18 +391,20 @@ class SkinPaintWin(QtWidgets.QDialog):
     # artAttrSkinPaintCtx
     # --------------------------------------------------------------
     def pickMaxInfluence(self):
+        import __main__
+
+        __main__.BLURpickVtxInfluence = self.finalCommandScriptPickVtxInfluence
+        __main__.BLURstartPickVtx = self.startpickVtx
+
         currContext = cmds.currentCtx()
         self.inPainting = currContext == "artAttrContext"
-        self.softOn = cmds.softSelect(q=True, softSelectEnabled=True)
-        if self.softOn:
-            cmds.softSelect(e=True, softSelectEnabled=False)
-        self.currentSel = cmds.select(cl=True)
+
         # cmds.select (cl=True)
 
         ctxArgs = {
             "title": "Select vertex influence",
-            #'finalCommandScript ':"python (\"finishTheSelection()\");",
-            "toolStart": "SelectVertexMask;",
+            #'finalCommandScript ':"python (\"BLURfinishSkinPaint()\");",
+            "toolStart": 'python ("BLURstartPickVtx()");',
             #'toolFinish ':"python (\"self.finalCommandScriptPickVtxInfluence()\");",
             "toolCursorType": "question",
             "totalSelectionSets": 1,
@@ -395,21 +422,28 @@ class SkinPaintWin(QtWidgets.QDialog):
         else:
             cmds.scriptCtx("SelectVertexSkinInfluence", e=True, **ctxArgs)
 
-        import __main__
-
-        __main__.BLRpickVtxInfluence = self.finalCommandScriptPickVtxInfluence
         cmds.scriptCtx(
-            "SelectVertexSkinInfluence", e=True, toolFinish='python ("BLRpickVtxInfluence()");'
+            "SelectVertexSkinInfluence", e=True, toolFinish='python ("BLURpickVtxInfluence()");'
         )
         cmds.setToolTo("SelectVertexSkinInfluence")
 
     # --------------------------------------------------------------
     # Pick Vtx Influence
     # --------------------------------------------------------------
+    def startpickVtx(self):
+        self.softOn = cmds.softSelect(q=True, softSelectEnabled=True)
+        if self.softOn:
+            cmds.softSelect(e=True, softSelectEnabled=False)
+        self.currentVertsSel = [el for el in cmds.ls(sl=True) if ".vtx[" in el]
+        if self.currentVertsSel:
+            cmds.select(self.currentVertsSel, d=True)
+
+        cmds.SelectVertexMask()
+
     def finalCommandScriptPickVtxInfluence(self):
-        theSelection = cmds.ls(sl=True)
-        if theSelection:
-            vtx = theSelection[0]
+        theVtxSelection = [el for el in cmds.ls(sl=True, fl=True) if ".vtx[" in el]
+        if theVtxSelection:
+            vtx = theVtxSelection[0]
             hist = cmds.listHistory(vtx, lv=0, pruneDagObjects=True)
             if hist:
                 skinClusters = cmds.ls(hist, type="skinCluster")
@@ -439,6 +473,8 @@ class SkinPaintWin(QtWidgets.QDialog):
                         )
         if self.softOn:
             cmds.softSelect(e=True, softSelectEnabled=True)
+        if self.currentVertsSel:
+            cmds.select(self.currentVertsSel, add=True)
 
     def selectedInfluences(self):
         return [item.influence() for item in self.uiInfluenceTREE.selectedItems()]
