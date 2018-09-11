@@ -441,6 +441,22 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="delete_btn">
+       <property name="maximumSize">
+        <size>
+         <width>18</width>
+         <height>18</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>delete the blurSkinNode</string>
+       </property>
+       <property name="text">
+        <string>del</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="pickVertex_btn">
        <property name="maximumSize">
         <size>

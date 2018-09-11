@@ -94,6 +94,10 @@ class BrushFunctions:
         if cmds.objExists(self.bsd):
             cmds.setAttr(self.bsd + ".postSetting", val)
 
+    def deleteNode(self):
+        if cmds.objExists(self.bsd):
+            cmds.delete(self.bsd)
+
     def setInfluenceIndex(self, infl):
         if cmds.objExists(self.bsd):
             cmds.setAttr(self.bsd + ".influenceIndex", infl)

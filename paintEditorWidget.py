@@ -36,6 +36,7 @@ def getIcon(iconNm):
 _icons = {
     "lock": Icons.getIcon(r"icons8\Android_L\PNG\48\Very_Basic\lock-48"),
     "unlock": Icons.getIcon(r"icons8\Android_L\PNG\48\Very_Basic\unlock-48"),
+    "del": Icons.getIcon(r"icons8\office\PNG\16\Editing\delete_sign-16"),
     "pinOn": getIcon("pinOn"),
     "pinOff": getIcon("pinOff"),
     "gaussian": getIcon("circleGauss"),
@@ -117,14 +118,11 @@ HorizHeaderView{
 }
 """
 
-
 ###################################################################################
 #
 #   the window
 #
 ###################################################################################
-
-
 class SkinPaintWin(QtWidgets.QDialog):
     """
     A simple test widget to contain and own the model and table.
@@ -181,7 +179,7 @@ class SkinPaintWin(QtWidgets.QDialog):
         checkableAction.setDefaultWidget(chbox)
         self.popMenu.addAction(checkableAction)
         """
-        selectItems = self.popMenu.addAction("select", partial(self.applyLock, "selJoints"))
+        selectItems = self.popMenu.addAction("select node", partial(self.applyLock, "selJoints"))
         self.popMenu.addAction(selectItems)
 
         self.popMenu.addSeparator()
@@ -397,6 +395,10 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.showLocks_btn.toggled.connect(self.showHideLocks)
         self.showLocks_btn.setText("")
 
+        self.delete_btn.setIcon(_icons["del"])
+        self.delete_btn.setText("")
+        self.delete_btn.clicked.connect(self.brushFunctions.deleteNode)
+
         self.pinSelection_btn.setIcon(_icons["pinOff"])
         self.pinSelection_btn.toggled.connect(self.changePin)
         self.pickVertex_btn.clicked.connect(self.pickMaxInfluence)
@@ -571,8 +573,18 @@ class SkinPaintWin(QtWidgets.QDialog):
     def influenceDoubleClicked(self, item, column):
         # print item.text(1), column
         txt = item.text(1)
-        if column == 1 and cmds.objExists(txt):
-            cmds.select(txt)
+        if cmds.objExists(txt):
+            if column == 1:
+                cmds.select(txt)
+            elif column == 0:
+                pos = QtGui.QCursor().pos()
+                theColor = [el / 255.0 for el in item.color()]
+                cmds.colorEditor(mini=True, position=[pos.x(), pos.y()], rgbValue=theColor)
+                if cmds.colorEditor(query=True, result=True):
+                    values = cmds.colorEditor(query=True, rgb=True)
+                    toSet = [255.0 * el for el in values]
+                    print values
+                    # cmds.displayRGBColor ("userDefined{0}".format (theUserDefinedIndex),*values)
 
     def influenceClicked(self, item, column):
         text = item.text(1)
@@ -681,13 +693,15 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         else:
             self.setBackground(1, self.regularBG)
 
-    def setColor(self, index):
-        cmds.setAttr(self._influence + ".objectColor", index)
+    """
+    def setColor(self, index):        
+        cmds.setAttr(self._influence+'.objectColor', index)
 
-        theCol = [col / 250.0 for col in self._colors[index]]
-        cmds.setAttr(objAsStr + ".overrideColorRGB", *theCol)
-
+        theCol = [col/250. for col in self._colors [index]]
+        cmds.setAttr (objAsStr+".overrideColorRGB", *theCol )
+        
         self.setDisplay()
+    """
 
     def color(self):
         return self._colors[cmds.getAttr(self._influence + ".objectColor")]
