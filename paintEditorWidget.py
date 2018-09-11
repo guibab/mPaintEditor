@@ -336,9 +336,17 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.unPin = not val
 
     def showHideLocks(self, val):
+        allItems = [
+            self.uiInfluenceTREE.topLevelItem(ind)
+            for ind in range(self.uiInfluenceTREE.topLevelItemCount())
+        ]
         if val:
             self.showLocks_btn.setIcon(_icons["eye"])
+            for item in allItems:
+                item.setHidden(False)
         else:
+            for item in allItems:
+                item.setHidden(item.isLocked())
             self.showLocks_btn.setIcon(_icons["eye-half"])
 
     def transferValues(self):
@@ -563,7 +571,7 @@ class SkinPaintWin(QtWidgets.QDialog):
     def influenceDoubleClicked(self, item, column):
         # print item.text(1), column
         txt = item.text(1)
-        if cmds.objExists(txt):
+        if column == 1 and cmds.objExists(txt):
             cmds.select(txt)
 
     def influenceClicked(self, item, column):
@@ -574,6 +582,7 @@ class SkinPaintWin(QtWidgets.QDialog):
 
     def applyLock(self, typeOfLock):
         # ["lockSel","unlockSel","lockAllButSel","unlockAllButSel","clearLocks" ]
+        autoHide = not self.showLocks_btn.isChecked()
         selectedItems = self.uiInfluenceTREE.selectedItems()
         allItems = [
             self.uiInfluenceTREE.topLevelItem(ind)
@@ -587,19 +596,19 @@ class SkinPaintWin(QtWidgets.QDialog):
                 cmds.select(clear=True)
         if typeOfLock == "clearLocks":
             for item in allItems:
-                item.setLocked(False)
+                item.setLocked(False, autoHide=autoHide)
         elif typeOfLock == "lockSel":
             for item in selectedItems:
-                item.setLocked(True)
+                item.setLocked(True, autoHide=autoHide)
         elif typeOfLock == "unlockSel":
             for item in selectedItems:
-                item.setLocked(False)
+                item.setLocked(False, autoHide=autoHide)
         elif typeOfLock == "lockAllButSel":
             for item in allItems:
-                item.setLocked(item not in selectedItems)
+                item.setLocked(item not in selectedItems, autoHide=autoHide)
         elif typeOfLock == "unlockAllButSel":
             for item in allItems:
-                item.setLocked(item in selectedItems)
+                item.setLocked(item in selectedItems, autoHide=autoHide)
 
     def influenceSelChanged(self):
         influences = self.selectedInfluences()
@@ -661,7 +670,7 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         super(InfluenceTreeWidgetItem, self).__init__(["", influence])
         self._influence = influence
         self.regularBG = self.background(1)
-        self.darkBG = QtGui.QBrush(QtGui.QColor(130, 130, 90))
+        self.darkBG = QtGui.QBrush(QtGui.QColor(120, 120, 120))
         self.setDisplay()
 
     def setDisplay(self):
@@ -691,14 +700,12 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         pixmap.fill(QtGui.QColor(*self.color()))
         return QtGui.QIcon(pixmap)
 
-    def setVisible(self, visible):
-        self.setLocked(not visible)
-        self.setHidden(not visible)
-
-    def setLocked(self, locked):
+    def setLocked(self, locked, autoHide=False):
         cmds.setAttr(self._influence + ".lockInfluenceWeights", locked)
         if locked:
             self.setSelected(False)
+        if autoHide and locked:
+            self.setHidden(True)
         self.setDisplay()
 
     def isLocked(self):
