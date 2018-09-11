@@ -516,12 +516,43 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="showLocks_btn">
+       <property name="minimumSize">
+        <size>
+         <width>20</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>20</width>
+         <height>20</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>show Locked</string>
+       </property>
+       <property name="text">
+        <string>lck</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="pinSelection_btn">
        <property name="maximumSize">
         <size>
          <width>20</width>
          <height>20</height>
         </size>
+       </property>
+       <property name="toolTip">
+        <string>pin selection</string>
        </property>
        <property name="text">
         <string>pin</string>

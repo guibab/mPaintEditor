@@ -98,6 +98,10 @@ class BrushFunctions:
         if cmds.objExists(self.bsd):
             cmds.setAttr(self.bsd + ".influenceIndex", infl)
 
+    def setBSDAttr(self, attr, val):
+        if cmds.objExists(self.bsd) and cmds.attributeQuery(attr, node=self.bsd, exists=True):
+            cmds.setAttr(self.bsd + "." + attr, val)
+
     def setSmoothOptions(self, repeatVal, depthVal):
         if cmds.objExists(self.bsd):
             cmds.setAttr(self.bsd + ".smoothRepeat", repeatVal)

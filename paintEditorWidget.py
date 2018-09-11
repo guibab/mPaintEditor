@@ -43,6 +43,8 @@ _icons = {
     "solid": getIcon("circleSolid"),
     "square": getIcon("rect"),
     "refresh": Icons.getIcon("refresh"),
+    "eye": Icons.getIcon("eye"),
+    "eye-half": Icons.getIcon("eye-half"),
 }
 styleSheet = """
 QWidget {
@@ -165,8 +167,46 @@ class SkinPaintWin(QtWidgets.QDialog):
 
         # self.addCallBacks ()
         self.refresh()
+        self.buildRCMenu()
         if self.EVENTCATCHER == None:
             self.EVENTCATCHER = CatchEventsWidget(connectedWindow=self)
+
+    def buildRCMenu(self):
+        self.popMenu = QtWidgets.QMenu(self.uiInfluenceTREE)
+        """
+        chbox = QtWidgets.QCheckBox("auto Prune", self.popMenu)
+        chbox.setChecked (self.autoPrune)
+        chbox.toggled.connect (self.autoPruneChecked)
+        checkableAction = QtWidgets.QWidgetAction(self.popMenu)
+        checkableAction.setDefaultWidget(chbox)
+        self.popMenu.addAction(checkableAction)
+        """
+        selectItems = self.popMenu.addAction("select", partial(self.applyLock, "selJoints"))
+        self.popMenu.addAction(selectItems)
+
+        self.popMenu.addSeparator()
+        lockSel = self.popMenu.addAction("lock Sel", partial(self.applyLock, "lockSel"))
+        self.popMenu.addAction(lockSel)
+        allButSel = self.popMenu.addAction(
+            "lock all but Sel", partial(self.applyLock, "lockAllButSel")
+        )
+        self.popMenu.addAction(allButSel)
+        unLockSel = self.popMenu.addAction("unlock Sel", partial(self.applyLock, "unlockSel"))
+        self.popMenu.addAction(unLockSel)
+        unLockAllButSel = self.popMenu.addAction(
+            "unlock all but Sel", partial(self.applyLock, "unlockAllButSel")
+        )
+        self.popMenu.addAction(unLockAllButSel)
+
+        self.popMenu.addSeparator()
+        unLockSel = self.popMenu.addAction("clear locks", partial(self.applyLock, "clearLocks"))
+        self.popMenu.addAction(unLockSel)
+
+        self.uiInfluenceTREE.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.uiInfluenceTREE.customContextMenuRequested.connect(self.showMenu)
+
+    def showMenu(self, pos):
+        self.popMenu.exec_(self.uiInfluenceTREE.mapToGlobal(pos))
 
     def setWindowDisplay(self):
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.Tool)
@@ -251,7 +291,6 @@ class SkinPaintWin(QtWidgets.QDialog):
 
     def addButtonsDirectSet(self, lstBtns):
         theCarryWidget = QtWidgets.QWidget()
-
         carryWidgLayoutlayout = QtWidgets.QHBoxLayout(theCarryWidget)
         carryWidgLayoutlayout.setContentsMargins(0, 0, 0, 0)
         carryWidgLayoutlayout.setSpacing(0)
@@ -270,6 +309,10 @@ class SkinPaintWin(QtWidgets.QDialog):
         return theCarryWidget
 
     def changeLock(self, val):
+        allItems = [
+            self.uiInfluenceTREE.topLevelItem(ind)
+            for ind in range(self.uiInfluenceTREE.topLevelItemCount())
+        ]
         if val:
             self.lock_btn.setIcon(_icons["lock"])
         else:
@@ -277,11 +320,26 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.unLock = not val
 
     def changePin(self, val):
+        selectedItems = self.uiInfluenceTREE.selectedItems()
+        allItems = [
+            self.uiInfluenceTREE.topLevelItem(ind)
+            for ind in range(self.uiInfluenceTREE.topLevelItemCount())
+        ]
         if val:
             self.pinSelection_btn.setIcon(_icons["pinOn"])
+            for item in allItems:
+                item.setHidden(item not in selectedItems)
         else:
+            for item in allItems:
+                item.setHidden(False)
             self.pinSelection_btn.setIcon(_icons["pinOff"])
         self.unPin = not val
+
+    def showHideLocks(self, val):
+        if val:
+            self.showLocks_btn.setIcon(_icons["eye"])
+        else:
+            self.showLocks_btn.setIcon(_icons["eye-half"])
 
     def transferValues(self):
         self.brushFunctions.setPaintMode(self.commandIndex)
@@ -312,8 +370,9 @@ class SkinPaintWin(QtWidgets.QDialog):
         for btn in [self.repeatBTN, self.depthBTN]:
             btn.setEnabled(setOn)
 
-    def smoothValueUpdate(self, val, nm):
-        print nm, val
+    def smoothValueUpdate(self, nm, val):
+        # print nm, val
+        self.brushFunctions.setBSDAttr(nm, val)
 
     def createWindow(self):
         self.unLock = True
@@ -325,6 +384,10 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.lock_btn.toggled.connect(self.changeLock)
         self.refresh_btn.clicked.connect(self.refreshBtn)
         self.enterPaint_btn.clicked.connect(self.enterPaint)
+
+        self.showLocks_btn.setIcon(_icons["eye"])
+        self.showLocks_btn.toggled.connect(self.showHideLocks)
+        self.showLocks_btn.setText("")
 
         self.pinSelection_btn.setIcon(_icons["pinOff"])
         self.pinSelection_btn.toggled.connect(self.changePin)
@@ -363,7 +426,9 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.repeatBTN._valueChanged.connect(partial(self.smoothValueUpdate, "smoothRepeat"))
         self.depthBTN._valueChanged.connect(partial(self.smoothValueUpdate, "smoothDepth"))
 
-        self.uiInfluenceTREE.itemSelectionChanged.connect(self.influenceSelChanged)
+        # self.uiInfluenceTREE.itemSelectionChanged.connect(self.influenceSelChanged)
+        self.uiInfluenceTREE.itemDoubleClicked.connect(self.influenceDoubleClicked)
+        self.uiInfluenceTREE.itemClicked.connect(self.influenceClicked)
 
         for ind, nm in enumerate(self.commandArray):
             thebtn = self.__dict__[nm + "_btn"]
@@ -391,7 +456,7 @@ class SkinPaintWin(QtWidgets.QDialog):
         Hlayout.addWidget(self.valueSetter)
         self.valueSetter.setMaximumSize(self.maxWidthCentralWidget, 18)
 
-        self.widgetAbs = self.addButtonsDirectSet([0, 0.25, 0.5, 1, 2, 5, 10, 25, 50, 75, 100])
+        self.widgetAbs = self.addButtonsDirectSet([0.25, 0.5, 1, 2, 5, 10, 25, 50, 75, 100])
 
         Hlayout2 = QtWidgets.QHBoxLayout(self)
         Hlayout2.setContentsMargins(0, 0, 0, 0)
@@ -495,10 +560,51 @@ class SkinPaintWin(QtWidgets.QDialog):
     def selectedInfluences(self):
         return [item.influence() for item in self.uiInfluenceTREE.selectedItems()]
 
+    def influenceDoubleClicked(self, item, column):
+        # print item.text(1), column
+        txt = item.text(1)
+        if cmds.objExists(txt):
+            cmds.select(txt)
+
+    def influenceClicked(self, item, column):
+        text = item.text(1)
+        if text in self.dataOfSkin.driverNames:
+            ind = self.dataOfSkin.driverNames.index(text)
+            self.brushFunctions.setInfluenceIndex(ind)
+
+    def applyLock(self, typeOfLock):
+        # ["lockSel","unlockSel","lockAllButSel","unlockAllButSel","clearLocks" ]
+        selectedItems = self.uiInfluenceTREE.selectedItems()
+        allItems = [
+            self.uiInfluenceTREE.topLevelItem(ind)
+            for ind in range(self.uiInfluenceTREE.topLevelItemCount())
+        ]
+        if typeOfLock == "selJoints":
+            toSel = cmds.ls([item.text(1) for item in selectedItems])
+            if toSel:
+                cmds.select(toSel)
+            else:
+                cmds.select(clear=True)
+        if typeOfLock == "clearLocks":
+            for item in allItems:
+                item.setLocked(False)
+        elif typeOfLock == "lockSel":
+            for item in selectedItems:
+                item.setLocked(True)
+        elif typeOfLock == "unlockSel":
+            for item in selectedItems:
+                item.setLocked(False)
+        elif typeOfLock == "lockAllButSel":
+            for item in allItems:
+                item.setLocked(item not in selectedItems)
+        elif typeOfLock == "unlockAllButSel":
+            for item in allItems:
+                item.setLocked(item in selectedItems)
+
     def influenceSelChanged(self):
         influences = self.selectedInfluences()
         if len(influences) > 0:
-            print influences
+            # print influences
             toSel = influences[0]
             ind = self.dataOfSkin.driverNames.index(influences[0])
             self.brushFunctions.setInfluenceIndex(ind)
@@ -506,13 +612,18 @@ class SkinPaintWin(QtWidgets.QDialog):
             print "clear influence"
 
     def filterInfluences(self, newText):
+        self.pinSelection_btn.setChecked(False)
+        newTexts = newText.split(" ")
         for nm, it in self.uiInfluenceTREE.dicWidgName.iteritems():
-            it.setHidden(re.search(newText, nm, re.IGNORECASE) == None)
+            foundText = False
+            for txt in newTexts:
+                foundText = re.search(txt, nm, re.IGNORECASE) != None
+                if foundText:
+                    break
+            it.setHidden(not foundText)
 
     def refreshBtn(self):
-        # self.storeSelection ()
         self.refresh(force=True)
-        # self.retrieveSelection ()
 
     def refresh(self, force=False):
         # print "refresh CALLED"
@@ -549,12 +660,17 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
     def __init__(self, influence):
         super(InfluenceTreeWidgetItem, self).__init__(["", influence])
         self._influence = influence
-
+        self.regularBG = self.background(1)
+        self.darkBG = QtGui.QBrush(QtGui.QColor(130, 130, 90))
         self.setDisplay()
 
     def setDisplay(self):
         self.setIcon(0, self.colorIcon())
         self.setIcon(1, self.lockIcon())
+        if self.isLocked():
+            self.setBackground(1, self.darkBG)
+        else:
+            self.setBackground(1, self.regularBG)
 
     def setColor(self, index):
         cmds.setAttr(self._influence + ".objectColor", index)
