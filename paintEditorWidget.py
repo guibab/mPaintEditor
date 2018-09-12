@@ -10,6 +10,7 @@ from maya import cmds, mel, OpenMaya
 import blurdev
 import os
 import re
+import numpy as np
 from studio.gui.resource import Icons
 from mWeightEditor.tools.skinData import DataOfSkin
 from mWeightEditor.tools.spinnerSlider import ValueSetting, ButtonWithValue
@@ -645,6 +646,24 @@ class SkinPaintWin(QtWidgets.QDialog):
 
     def refreshBtn(self):
         self.refresh(force=True)
+
+    def prepareToGetHighestInfluence(self):
+        self.highestInfluence = -1
+        self.dataOfSkin.rawSkinValues = self.dataOfSkin.exposeSkinData(
+            self.dataOfSkin.theSkinCluster
+        )
+        self.dataOfSkin.getZeroColumns()
+
+    def getHighestInfluence(self, vtxIndex):
+        self.highestInfluence = np.argmax(self.dataOfSkin.raw2dArray[vtxIndex])
+        return self.dataOfSkin.driverNames[self.highestInfluence]
+
+    def selectPickedInfluence(self):
+        if self.highestInfluence != -1:
+            self.uiInfluenceTREE.setCurrentItem(
+                self.uiInfluenceTREE.topLevelItem(self.highestInfluence)
+            )
+            self.brushFunctions.setInfluenceIndex(int(self.highestInfluence))
 
     def refresh(self, force=False):
         # print "refresh CALLED"

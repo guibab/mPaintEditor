@@ -121,7 +121,7 @@ class BrushFunctions:
 
     def paintSkinOffProc(self):
         print "--- exiting blur skin Paint -----"
-        self.mainWindow.EVENTCATCHER.removeFilters()
+        self.mainWindow.EVENTCATCHER.fermer()  # removeFilters ()
 
     def enterPaint(self):
         self.deleteTheJobs(toSearch="function callAfterPaint")
