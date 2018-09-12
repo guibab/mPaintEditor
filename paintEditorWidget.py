@@ -214,14 +214,15 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.show()
 
     def refreshPosition(self):
-        vals = cmds.optionVar(q="SkinPaintWindow")
-        if vals:
-            self.move(vals[0], vals[1])
-            self.resize(vals[2], vals[3])
-        if len(vals) > 4:
-            self.changeCommand(vals[4])
-            thebtn = self.__dict__[self.commandArray[vals[4]] + "_btn"]
-            thebtn.setChecked(True)
+        if cmds.optionVar(ex="SkinPaintWindow"):
+            vals = cmds.optionVar(q="SkinPaintWindow")
+            if vals:
+                self.move(vals[0], vals[1])
+                self.resize(vals[2], vals[3])
+            if len(vals) > 4:
+                self.changeCommand(vals[4])
+                thebtn = self.__dict__[self.commandArray[vals[4]] + "_btn"]
+                thebtn.setChecked(True)
 
     def addCallBacks(self):
         self.refreshSJ = cmds.scriptJob(event=["SelectionChanged", self.refresh])
@@ -403,6 +404,7 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.pinSelection_btn.setIcon(_icons["pinOff"])
         self.pinSelection_btn.toggled.connect(self.changePin)
         self.pickVertex_btn.clicked.connect(self.pickMaxInfluence)
+        self.pickInfluence_btn.clicked.connect(self.pickInfluence)
         self.undo_btn.clicked.connect(self.brushFunctions.callUndo)
         self.undo_btn.clicked.connect(self.brushFunctions.callUndo)
         self.postSet_cb.toggled.connect(self.brushFunctions.togglePostSetting)
@@ -459,6 +461,8 @@ class SkinPaintWin(QtWidgets.QDialog):
 
         for nm in ["lock", "refresh", "pinSelection"]:
             self.__dict__[nm + "_btn"].setText("")
+        for btnName in ["pickVertex_btn", "pickInfluence_btn"]:
+            self.__dict__[btnName].setEnabled(False)
         self.valueSetter = ValueSettingPE(self, precision=2)
         self.valueSetter.setAddMode(False, autoReset=False)
         Hlayout = QtWidgets.QHBoxLayout(self)
@@ -483,6 +487,14 @@ class SkinPaintWin(QtWidgets.QDialog):
     # artAttrSkinPaintCtx
     # --------------------------------------------------------------
     def pickMaxInfluence(self):
+        self.prepareToGetHighestInfluence()
+        self.EVENTCATCHER.createDisplayLabel(vertexPicking=True)
+
+    def pickInfluence(self):
+        self.prepareToGetHighestInfluence()
+        self.EVENTCATCHER.createDisplayLabel(vertexPicking=False)
+
+    def pickMaxInfluenceOLD(self):
         import __main__
 
         __main__.BLURpickVtxInfluence = self.finalCommandScriptPickVtxInfluence
@@ -679,6 +691,16 @@ class SkinPaintWin(QtWidgets.QDialog):
                 # jointItem.setText (1, nm)
                 self.uiInfluenceTREE.addTopLevelItem(jointItem)
                 self.uiInfluenceTREE.dicWidgName[nm] = jointItem
+
+    def paintEnd(self):
+        self.EVENTCATCHER.fermer()  # removeFilters ()
+        for btnName in ["pickVertex_btn", "pickInfluence_btn"]:
+            self.__dict__[btnName].setEnabled(False)
+
+    def paintStart(self):
+        self.EVENTCATCHER.open()  # adEventFilters ()
+        for btnName in ["pickVertex_btn", "pickInfluence_btn"]:
+            self.__dict__[btnName].setEnabled(True)
 
 
 # -------------------------------------------------------------------------------

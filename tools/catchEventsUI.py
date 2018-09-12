@@ -247,7 +247,7 @@ class GetClosestVert(QtWidgets.QLabel):
             return lbl.strip(".")
             cmds.popupMenu("testMenu", e=True, deleteAllItems=True)
         else:
-            return "----------"
+            return "          "
 
     def getClosestVert(self, worldPos):
         thePos = worldPos - self.screenPos
@@ -292,7 +292,7 @@ class GetClosestVert(QtWidgets.QLabel):
             yPos = utily.asShortPtr()
 
             self.mainWindow.highestInfluence = -1
-            txt = "----------"
+            txt = "          "
             for ind, (jntCenter, nd) in enumerate(self.BBnodes):
                 self.active_view.worldToView(jntCenter, xPos, yPos)
                 jnt_x = OpenMaya.MScriptUtil(xPos).asShort()
@@ -445,10 +445,10 @@ class CatchEventsWidget(QtWidgets.QWidget):
                         print "custom pressed Alt D"
                     else:
                         print "custom pressed D"
-                event.ignore()
                 # self.mainWindow.pickMaxInfluence ()
                 self.mainWindow.prepareToGetHighestInfluence()
                 self.createDisplayLabel(vertexPicking=altPressed)
+                event.ignore()
                 return True
             return super(CatchEventsWidget, self).eventFilter(obj, event)
         else:
@@ -458,7 +458,7 @@ class CatchEventsWidget(QtWidgets.QWidget):
         self.displayLabel = GetClosestVert()
         self.displayLabel.mainWindow = self.mainWindow
         self.displayLabel.show()
-        self.displayLabel.drawText("----------")
+        self.displayLabel.drawText("          ")
         self.displayLabel.startFn(vertexPicking=vertexPicking)
 
     def closeEvent(self, e):
