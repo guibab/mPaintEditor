@@ -166,8 +166,9 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.setWindowDisplay()
 
         # self.addCallBacks ()
-        self.refresh()
         self.buildRCMenu()
+        self.refresh()
+
         if self.EVENTCATCHER == None:
             self.EVENTCATCHER = CatchEventsWidget(connectedWindow=self)
 
@@ -202,11 +203,37 @@ class SkinPaintWin(QtWidgets.QDialog):
         unLockSel = self.popMenu.addAction("clear locks", partial(self.applyLock, "clearLocks"))
         self.popMenu.addAction(unLockSel)
 
+        self.popMenu.addSeparator()
+        self.showZeroDeformers = (
+            cmds.optionVar(q="showZeroDeformers")
+            if cmds.optionVar(exists="showZeroDeformers")
+            else False
+        )
+        chbox = QtWidgets.QCheckBox("show Zero Deformers", self.popMenu)
+        chbox.setChecked(self.showZeroDeformers)
+        chbox.toggled.connect(self.showZeroDefmChecked)
+        checkableAction = QtWidgets.QWidgetAction(self.popMenu)
+        checkableAction.setDefaultWidget(chbox)
+        self.popMenu.addAction(checkableAction)
+
         self.uiInfluenceTREE.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.uiInfluenceTREE.customContextMenuRequested.connect(self.showMenu)
 
     def showMenu(self, pos):
         self.popMenu.exec_(self.uiInfluenceTREE.mapToGlobal(pos))
+
+    def showZeroDefmChecked(self, checked):
+        cmds.optionVar(intValue=["showZeroDeformers", checked])
+        self.showZeroDeformers = checked
+        self.popMenu.close()
+
+        allItems = [
+            self.uiInfluenceTREE.topLevelItem(ind)
+            for ind in range(self.uiInfluenceTREE.topLevelItemCount())
+        ]
+        for item in allItems:
+            if item.isZeroDfm:
+                item.setHidden(self.showZeroDeformers)
 
     def setWindowDisplay(self):
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.Tool)
@@ -329,10 +356,13 @@ class SkinPaintWin(QtWidgets.QDialog):
         if val:
             self.pinSelection_btn.setIcon(_icons["pinOn"])
             for item in allItems:
-                item.setHidden(item not in selectedItems)
+                toHide = item not in selectedItems
+                toHide |= self.showZeroDeformers and item.isZeroDfm
+                item.setHidden(toHide)
         else:
             for item in allItems:
-                item.setHidden(False)
+                toHide = self.showZeroDeformers and item.isZeroDfm
+                item.setHidden(toHide)
             self.pinSelection_btn.setIcon(_icons["pinOff"])
         self.unPin = not val
 
@@ -383,6 +413,12 @@ class SkinPaintWin(QtWidgets.QDialog):
         # print nm, val
         self.brushFunctions.setBSDAttr(nm, val)
 
+    def changeMultiSolo(self, val):
+        if val:
+            cmds.polyColorSet(currentColorSet=True, colorSet="multiColorsSet")
+        else:
+            cmds.polyColorSet(currentColorSet=True, colorSet="soloColorsSet")
+
     def createWindow(self):
         self.unLock = True
         self.unPin = True
@@ -410,6 +446,7 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.undo_btn.clicked.connect(self.brushFunctions.callUndo)
         self.postSet_cb.toggled.connect(self.brushFunctions.togglePostSetting)
         self.searchInfluences_le.textChanged.connect(self.filterInfluences)
+        self.multi_rb.toggled.connect(self.changeMultiSolo)
 
         self.repeatBTN = ButtonWithValue(
             self.buttonWidg,
@@ -682,18 +719,21 @@ class SkinPaintWin(QtWidgets.QDialog):
     def refresh(self, force=False):
         # print "refresh CALLED"
         with GlobalContext(message="dataOfSkin getAllData", doPrint=True):
-            resultData = self.dataOfSkin.getAllData(displayLocator=False, getskinWeights=False)
+            resultData = self.dataOfSkin.getAllData(displayLocator=False, getskinWeights=True)
         if resultData:
             self.brushFunctions.bsd = self.dataOfSkin.getConnectedBlurskinDisplay()
             self.uiInfluenceTREE.clear()
             self.uiInfluenceTREE.dicWidgName = {}
 
-            for nm in self.dataOfSkin.driverNames:  # .shortDriverNames :
+            for ind, nm in enumerate(self.dataOfSkin.driverNames):  # .shortDriverNames :
                 jointItem = InfluenceTreeWidgetItem(nm)
                 # jointItem =  QtWidgets.QTreeWidgetItem()
                 # jointItem.setText (1, nm)
                 self.uiInfluenceTREE.addTopLevelItem(jointItem)
                 self.uiInfluenceTREE.dicWidgName[nm] = jointItem
+
+                jointItem.isZeroDfm = ind in self.dataOfSkin.hideColumnIndices
+                jointItem.setHidden(self.showZeroDeformers and jointItem.isZeroDfm)
 
     def paintEnd(self):
         self.EVENTCATCHER.fermer()  # removeFilters ()
@@ -721,6 +761,7 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         (111, 48, 161),
         (161, 48, 105),
     ]
+    isZeroDfm = False
 
     def __init__(self, influence):
         super(InfluenceTreeWidgetItem, self).__init__(["", influence])
