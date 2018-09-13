@@ -494,6 +494,20 @@ class CatchEventsWidget(QtWidgets.QWidget):
                     cmds.modelEditor(pnel, edit=True, jointXray=val)
                 event.ignore()
                 return True
+            if event.key() == QtCore.Qt.Key_W and altPressed:
+                currCtx = cmds.currentCtx()
+                prevVal = cmds.artAttrCtx(currCtx, query=True, showactive=True)
+                cmds.artAttrCtx(currCtx, edit=True, showactive=not prevVal)
+                event.ignore()
+                return True
+            if event.key() == QtCore.Qt.Key_S and altPressed:
+                if self.mainWindow.multi_rb.isChecked():
+                    self.mainWindow.solo_rb.toggle()
+                else:
+                    self.mainWindow.multi_rb.toggle()
+
+                event.ignore()
+                return True
             if event.key() == QtCore.Qt.Key_D:
                 if self.verbose:
                     if altPressed:

@@ -83,7 +83,7 @@ QPushButton:pressed {
     color:white;
     border-style: inset;
 }
-QPushButton:disabled {
+QWidget:disabled {
     font:italic;
     color:grey;
     }
@@ -447,6 +447,9 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.pickInfluence_btn.clicked.connect(self.pickInfluence)
         self.undo_btn.clicked.connect(self.brushFunctions.callUndo)
         self.undo_btn.clicked.connect(self.brushFunctions.callUndo)
+
+        self.postSet_cb.toggled.connect(self.autoExpand_cb.setEnabled)
+
         self.postSet_cb.toggled.connect(self.brushFunctions.togglePostSetting)
         self.searchInfluences_le.textChanged.connect(self.filterInfluences)
         self.multi_rb.toggled.connect(self.changeMultiSolo)
@@ -742,11 +745,13 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.EVENTCATCHER.fermer()  # removeFilters ()
         for btnName in ["pickVertex_btn", "pickInfluence_btn"]:
             self.__dict__[btnName].setEnabled(False)
+        self.setStyleSheet(styleSheet)
 
     def paintStart(self):
         self.EVENTCATCHER.open()  # adEventFilters ()
         for btnName in ["pickVertex_btn", "pickInfluence_btn"]:
             self.__dict__[btnName].setEnabled(True)
+        self.setStyleSheet(styleSheet + "SkinPaintWin {border : 2px solid red}")
 
 
 # -------------------------------------------------------------------------------
