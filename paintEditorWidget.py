@@ -414,10 +414,13 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.brushFunctions.setBSDAttr(nm, val)
 
     def changeMultiSolo(self, val):
-        if val:
-            cmds.polyColorSet(currentColorSet=True, colorSet="multiColorsSet")
-        else:
-            cmds.polyColorSet(currentColorSet=True, colorSet="soloColorsSet")
+        res = cmds.polyColorSet(query=True, allColorSets=True)
+        if "multiColorsSet" in res and "soloColorsSet" in res:
+            if val:
+                cmds.polyColorSet(currentColorSet=True, colorSet="multiColorsSet")
+            else:
+                cmds.polyColorSet(currentColorSet=True, colorSet="soloColorsSet")
+        self.brushFunctions.setBSDAttr("colorType", int(not val))
 
     def createWindow(self):
         self.unLock = True
