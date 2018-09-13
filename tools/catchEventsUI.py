@@ -467,6 +467,7 @@ class CatchEventsWidget(QtWidgets.QWidget):
                 event.ignore()
                 self.prevButton = self.mainWindow.getEnabledButton()
                 self.mainWindow.rmv_btn.setChecked(True)
+                self.mainWindow.brushFunctions.setPaintMode(1)  # remove
                 # self.mainWindow.rmv_btn.click()
                 return True
             elif event.key() == QtCore.Qt.Key_N:

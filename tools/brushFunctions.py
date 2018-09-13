@@ -103,6 +103,7 @@ class BrushFunctions:
             cmds.setAttr(self.bsd + ".influenceIndex", infl)
 
     def setBSDAttr(self, attr, val):
+        # print attr, val
         if cmds.objExists(self.bsd) and cmds.attributeQuery(attr, node=self.bsd, exists=True):
             cmds.setAttr(self.bsd + "." + attr, val)
 
@@ -117,6 +118,7 @@ class BrushFunctions:
 
     def paintSkinOnProc(self):
         print "--- entering blur skin Paint -----"
+        self.createScriptJob()
         self.mainWindow.paintStart()
 
     def paintSkinOffProc(self):
@@ -141,8 +143,6 @@ class BrushFunctions:
         # fcProc = createMelProcedure(self.finalPaintBrush, [('int','slot')])
         # import __main__
         # __main__.applyCallBack = True
-        self.createScriptJob()
-
         paintArgs = {
             "outline": True,
             "colorfeedback": False,
@@ -155,9 +155,11 @@ class BrushFunctions:
         cmds.artAttrCtx(cmds.currentCtx(), edit=True, **paintArgs)
 
     def createScriptJob(self):
-        theJob = cmds.scriptJob(
-            runOnce=False, attributeChange=[self.bsd + ".paintAttr", self.callAfterPaint]
-        )
+        self.deleteTheJobs()
+        if cmds.objExists(self.bsd + ".paintAttr"):
+            theJob = cmds.scriptJob(
+                runOnce=False, attributeChange=[self.bsd + ".paintAttr", self.callAfterPaint]
+            )
 
     def deleteTheJobs(self, toSearch="BrushFunctions.callAfterPaint"):
         res = cmds.scriptJob(listJobs=True)
