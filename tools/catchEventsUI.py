@@ -3,6 +3,8 @@ from Qt.QtWidgets import QApplication, QSplashScreen, QDialog, QMainWindow
 from maya import OpenMaya, OpenMayaUI, OpenMayaAnim, cmds, mel
 from functools import partial
 
+from mWeightEditor.tools.utils import GlobalContext
+
 
 def rootWindow():
     """
@@ -44,11 +46,9 @@ def rootWindow():
     return window
 
 
-class GetClosestVert(QtWidgets.QLabel):
+class LabelDisplayInfluence(QtWidgets.QLabel):
     def __init__(self):
-        super(GetClosestVert, self).__init__(rootWindow())
-        self._font = QtGui.QFont("Myriad Pro", 10)
-        self._metrics = QtGui.QFontMetrics(self._font)
+        super(LabelDisplayInfluence, self).__init__(rootWindow())
         self.setWindowFlags(
             QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint
         )  # (QtCore.Qt.Window | QtCore.Qt.WindowTitleHint | QtCore.Qt.CustomizeWindowHint)
@@ -57,11 +57,13 @@ class GetClosestVert(QtWidgets.QLabel):
         self.setStyleSheet(
             "margin-left: 0px; border-radius: 25px; background: yellow; color: black; border: 1px solid black;"
         )
+        # self.setFont (self._font)
 
     def drawText(self, txt):
         if self.currentText != txt:
             self.setText(txt)
-            sz = self._metrics.size(QtCore.Qt.TextSingleLine, txt)
+            sz = self.fontMetrics().boundingRect(txt).size() + QtCore.QSize(10, 4)
+            # sz = self.fontMetrics().size(QtCore.Qt.TextSingleLine,txt)
             self.resize(sz)
             self.currentText = txt
         # self.setAttribute (QtCore.Qt.WA_MouseNoMask, True)
@@ -232,6 +234,7 @@ class GetClosestVert(QtWidgets.QLabel):
         else:
             # self.jointsDagNodes = self.getDagNodes (self.mainWindow.dataOfSkin.theSkinCluster)
             self.BBnodes = self.getBBNodes()
+
             # if cmds.popupMenu ("testMenu", exists=True ) : cmds.deleteUI ("testMenu")
             # cmds.popupMenu ("testMenu",parent ="viewPanes")
 
@@ -283,6 +286,49 @@ class GetClosestVert(QtWidgets.QLabel):
                     self.prevVtx = closestVert
                     # cmds.select ("{0}.f[{1}]".format (self.meshName, face_idx))
         else:
+            """
+            nearPt = OpenMaya.MPoint()
+            farPt = OpenMaya.MPoint()
+            self.active_view.viewToWorld (x,y,nearPt, farPt)
+            rayBB  = OpenMaya.MBoundingBox (nearPt, farPt)
+            txt = "          "
+            rayBBRect = QtCore.QRectF(QtCore.QPointF(x-self.radiusIntersect,y-self.radiusIntersect ), QtCore.QPointF(x+self.radiusIntersect,y+self.radiusIntersect ))
+
+            utilx = OpenMaya.MScriptUtil()
+            utilx.createFromInt(0)
+            xPos = utilx.asShortPtr ()
+            utily = OpenMaya.MScriptUtil()
+            utily.createFromInt(0)
+            yPos = utily.asShortPtr()
+
+            sizeToBeat = 0
+            for dagNode in self.jointsDagNodes :
+                theBB = dagNode.boundingBox()
+                matrix = dagNode.dagPath().inclusiveMatrix()
+                theBB.transformUsing( matrix )
+
+                minBB, maxBB = theBB.max(),theBB.min()
+
+                self.active_view.worldToView (minBB,xPos, yPos)
+                min_x = OpenMaya.MScriptUtil(xPos).asShort()
+                min_y = OpenMaya.MScriptUtil(yPos).asShort()
+
+                self.active_view.worldToView (maxBB,xPos, yPos)
+                max_x = OpenMaya.MScriptUtil(xPos).asShort()
+                max_y = OpenMaya.MScriptUtil(yPos).asShort()
+                theRectBB = QtCore.QRectF(QtCore.QPointF(min_x,min_y ), QtCore.QPointF(max_x,max_y ))
+                #if rayBB.intersects (theBB) :
+
+                if rayBBRect.intersects (theRectBB) :
+                    theIntersect = rayBBRect.intersected (theRectBB)
+                    theSize = theIntersect.width() * theIntersect.height()
+                    if theSize > sizeToBeat :
+                        txt = dagNode.partialPathName ()
+                        sizeToBeat = theSize
+                    #break
+            self.drawText (txt)
+
+            """
             hitNodes = []
             utilx = OpenMaya.MScriptUtil()
             utilx.createFromInt(0)
@@ -439,6 +485,15 @@ class CatchEventsWidget(QtWidgets.QWidget):
                 event.ignore()
                 self.mainWindow.undo_btn.click()
                 return True
+            if event.key() == QtCore.Qt.Key_X and altPressed:
+                listModelPanels = [
+                    el for el in cmds.getPanel(vis=True) if cmds.getPanel(to=el) == "modelPanel"
+                ]
+                val = not cmds.modelEditor(listModelPanels[0], query=True, jointXray=True)
+                for pnel in listModelPanels:
+                    cmds.modelEditor(pnel, edit=True, jointXray=val)
+                event.ignore()
+                return True
             if event.key() == QtCore.Qt.Key_D:
                 if self.verbose:
                     if altPressed:
@@ -446,8 +501,7 @@ class CatchEventsWidget(QtWidgets.QWidget):
                     else:
                         print "custom pressed D"
                 # self.mainWindow.pickMaxInfluence ()
-                self.mainWindow.prepareToGetHighestInfluence()
-                self.createDisplayLabel(vertexPicking=altPressed)
+                self.mainWindow.pickInfluence(vertexPicking=altPressed)
                 event.ignore()
                 return True
             return super(CatchEventsWidget, self).eventFilter(obj, event)
@@ -455,10 +509,11 @@ class CatchEventsWidget(QtWidgets.QWidget):
             return super(CatchEventsWidget, self).eventFilter(obj, event)
 
     def createDisplayLabel(self, vertexPicking=True):
-        self.displayLabel = GetClosestVert()
-        self.displayLabel.mainWindow = self.mainWindow
-        self.displayLabel.show()
-        self.displayLabel.drawText("          ")
+        if not self.displayLabel:
+            self.displayLabel = LabelDisplayInfluence()
+            self.displayLabel.mainWindow = self.mainWindow
+            self.displayLabel.show()
+            self.displayLabel.drawText("          ")
         self.displayLabel.startFn(vertexPicking=vertexPicking)
 
     def closeEvent(self, e):

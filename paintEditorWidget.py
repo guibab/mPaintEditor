@@ -14,6 +14,7 @@ import numpy as np
 from studio.gui.resource import Icons
 from mWeightEditor.tools.skinData import DataOfSkin
 from mWeightEditor.tools.spinnerSlider import ValueSetting, ButtonWithValue
+from mWeightEditor.tools.utils import GlobalContext
 from tools.brushFunctions import BrushFunctions
 from tools.catchEventsUI import CatchEventsWidget
 
@@ -238,7 +239,7 @@ class SkinPaintWin(QtWidgets.QDialog):
         # cmds.scriptJob( kill=self.refreshSJ, force=True)
         # for callBck in self.close_callback : OpenMaya.MSceneMessage.removeCallback(callBck)
 
-    commandIndex = -1
+    commandIndex = 0
     value = 1.0
     commandArray = ["add", "rmv", "addPerc", "abs", "smooth", "sharpen"]
 
@@ -487,12 +488,13 @@ class SkinPaintWin(QtWidgets.QDialog):
     # artAttrSkinPaintCtx
     # --------------------------------------------------------------
     def pickMaxInfluence(self):
-        self.prepareToGetHighestInfluence()
-        self.EVENTCATCHER.createDisplayLabel(vertexPicking=True)
+        self.pickInfluence(vertexPicking=True)
 
-    def pickInfluence(self):
-        self.prepareToGetHighestInfluence()
-        self.EVENTCATCHER.createDisplayLabel(vertexPicking=False)
+    def pickInfluence(self, vertexPicking=False):
+        with GlobalContext(message="prepareToGetHighestInfluence", doPrint=True):
+            if vertexPicking:
+                self.prepareToGetHighestInfluence()
+        self.EVENTCATCHER.createDisplayLabel(vertexPicking=vertexPicking)
 
     def pickMaxInfluenceOLD(self):
         import __main__
@@ -679,7 +681,8 @@ class SkinPaintWin(QtWidgets.QDialog):
 
     def refresh(self, force=False):
         # print "refresh CALLED"
-        resultData = self.dataOfSkin.getAllData(displayLocator=False)
+        with GlobalContext(message="dataOfSkin getAllData", doPrint=True):
+            resultData = self.dataOfSkin.getAllData(displayLocator=False, getskinWeights=False)
         if resultData:
             self.brushFunctions.bsd = self.dataOfSkin.getConnectedBlurskinDisplay()
             self.uiInfluenceTREE.clear()

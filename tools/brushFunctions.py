@@ -124,7 +124,7 @@ class BrushFunctions:
         self.mainWindow.paintEnd()
 
     def enterPaint(self):
-        self.deleteTheJobs(toSearch="function callAfterPaint")
+        self.callAfterPaint()
 
         nbAtt = cmds.getAttr(self.bsd + ".wl", size=True)
         val = [0] * nbAtt
