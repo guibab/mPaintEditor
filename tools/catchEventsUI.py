@@ -369,6 +369,8 @@ class CatchEventsWidget(QtWidgets.QWidget):
         self.mainWindow = connectedWindow
         self.NPressed = False
         self.brushValUpdate = False
+        self.CtrlOrShiftPressed = False
+        self.CtrlOrShiftPaint = False
         # self.setAttribute (QtCore.Qt.WA_MouseNoMask, True)
 
     def open(self):
@@ -396,34 +398,49 @@ class CatchEventsWidget(QtWidgets.QWidget):
         QApplication.instance().removeEventFilter(self)
 
     def eventFilter(self, obj, event):
-        if event.type() == QtCore.QEvent.MouseMove and event.modifiers() != QtCore.Qt.AltModifier:
-            if self.NPressed:
-                self.brushValUpdate = True
-            if self.displayLabel:
-                self.displayLabel.applyPos(event.globalPos())
+        if event.type() == QtCore.QEvent.MouseMove:  # move
+            if event.modifiers() != QtCore.Qt.AltModifier:  # not orbit in scene
+                if event.buttons() == QtCore.Qt.LeftButton:  # painting
+                    if self.CtrlOrShiftPressed:
+                        self.CtrlOrShiftPaint = True
+                if self.NPressed:
+                    self.brushValUpdate = True
+                if self.displayLabel:
+                    self.displayLabel.applyPos(event.globalPos())
+            else:
+                if self.CtrlOrShiftPressed:
+                    self.CtrlOrShiftPaint = True
             return super(CatchEventsWidget, self).eventFilter(obj, event)
         if (
             event.type() in [QtCore.QEvent.MouseButtonPress, QtCore.QEvent.MouseButtonRelease]
             and event.modifiers() != QtCore.Qt.AltModifier
         ):
-            # if event.button() == QtCore.Qt.RightButton  : print "Right Click"
-            # elif event.button() == QtCore.Qt.LeftButton  : print "Left Click"
-
-            # theModifiers = QtCore.Qt.KeyboardModifiers (QtCore.Qt.NoModifier )
-            if event.modifiers() == QtCore.Qt.NoModifier:
-                if event.type() == QtCore.QEvent.MouseButtonRelease:
-                    if self.brushValUpdate:
+            if event.modifiers() == QtCore.Qt.NoModifier:  # regular click
+                if event.type() == QtCore.QEvent.MouseButtonPress:  # click
+                    if self.displayLabel:  # let's close the label
+                        self.mainWindow.selectPickedInfluence()
+                        self.deleteDisplayLabel()
+                        event.ignore()
+                        return True
+                if event.type() == QtCore.QEvent.MouseButtonRelease:  # click release
+                    if self.brushValUpdate:  # update the brush
                         self.brushValUpdate = False
-                        # print "!!! update Value of Brush !!!"
                         self.mainWindow.changeOfValue()
-                elif self.displayLabel and event.type() == QtCore.QEvent.MouseButtonPress:
-                    self.mainWindow.selectPickedInfluence()
-                    self.deleteDisplayLabel()
-                    event.ignore()
-                    return True
+                    if self.CtrlOrShiftPaint:  # change to regular paint
+                        self.CtrlOrShiftPaint = False
+                        if not self.CtrlOrShiftPressed:
+                            # ctrl or shift has been released previously so we change button ---
+                            # we need to do it in the script job, no other way ---
+                            currContext = cmds.currentCtx()
+                            if currContext == "artAttrContext":
+                                gArtAttrCurrentAttr = mel.eval("$tmp = $gArtAttrCurrentAttr")
+                                typeOfNode, node, attr = gArtAttrCurrentAttr.split(".")
+                                theFn = partial(cmds.evalDeferred, self.prevButton.click)
+                                cmds.scriptJob(
+                                    runOnce=True, attributeChange=[node + "." + attr, theFn]
+                                )
                 return super(CatchEventsWidget, self).eventFilter(obj, event)
-            else:
-                # remove the alt and control
+            else:  # remove the shift and control modifiers
                 altShift = (
                     event.modifiers()
                     == QtCore.Qt.AltModifier | event.modifiers()
@@ -437,7 +454,6 @@ class CatchEventsWidget(QtWidgets.QWidget):
                 theModifiers = QtCore.Qt.KeyboardModifiers(QtCore.Qt.NoModifier)
                 if altShift or altCtrl:
                     theModifiers = QtCore.Qt.KeyboardModifiers(QtCore.Qt.AltModifier)
-
                 theMouseEvent = QtGui.QMouseEvent(
                     event.type(), event.pos(), event.button(), event.buttons(), theModifiers
                 )
@@ -448,9 +464,12 @@ class CatchEventsWidget(QtWidgets.QWidget):
             if event.key() in [QtCore.Qt.Key_Shift, QtCore.Qt.Key_Control]:
                 if self.verbose:
                     print "custom SHIFT released"
-                event.ignore()
-                self.prevButton.click()
-                return True
+                self.CtrlOrShiftPressed = False
+                if not self.CtrlOrShiftPaint:
+                    self.prevButton.click()
+                # event.ignore ()
+
+                # return True
             elif event.key() == QtCore.Qt.Key_N:
                 self.NPressed = False  # the value of the brush
         if event.type() == QtCore.QEvent.KeyPress:
@@ -458,17 +477,21 @@ class CatchEventsWidget(QtWidgets.QWidget):
                 if self.verbose:
                     print "custom CONTROL pressed"
                 event.ignore()
+                self.CtrlOrShiftPressed = True
+                self.CtrlOrShiftPaint = False
                 self.prevButton = self.mainWindow.getEnabledButton()
-                self.mainWindow.smooth_btn.click()
+                # self.mainWindow.rmv_btn.setChecked(True)
+                # self.mainWindow.brushFunctions.setPaintMode(1) # remove
+                self.mainWindow.rmv_btn.click()
                 return True
             elif event.key() == QtCore.Qt.Key_Shift:
                 if self.verbose:
                     print "custom SHIFT pressed"
                 event.ignore()
+                self.CtrlOrShiftPressed = True
+                self.CtrlOrShiftPaint = False
                 self.prevButton = self.mainWindow.getEnabledButton()
-                self.mainWindow.rmv_btn.setChecked(True)
-                self.mainWindow.brushFunctions.setPaintMode(1)  # remove
-                # self.mainWindow.rmv_btn.click()
+                self.mainWindow.smooth_btn.click()
                 return True
             elif event.key() == QtCore.Qt.Key_N:
                 self.NPressed = True

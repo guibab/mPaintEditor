@@ -184,7 +184,7 @@ class BrushFunctions:
                     # reconnect :
                     outConn = cmds.listConnections(node + ".wl", s=False, d=True)
                     if not outConn:
-                        print "RECONNECT WEIGHTLIST"
+                        print "RECONNECT WEIGHTLIST from callAfterPaint - scriptJob"
                         outMeshConn = cmds.listConnections(
                             node + ".outMesh", s=False, d=True, type="skinCluster"
                         )
