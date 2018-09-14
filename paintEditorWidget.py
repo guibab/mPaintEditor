@@ -423,7 +423,9 @@ class SkinPaintWin(QtWidgets.QDialog):
 
     def changeMultiSolo(self, val):
         res = cmds.polyColorSet(query=True, allColorSets=True) or []
-        if "multiColorsSet" in res and "soloColorsSet" in res:
+        if val == -1 and "noColorsSet" in res:
+            cmds.polyColorSet(currentColorSet=True, colorSet="noColorsSet")
+        elif "multiColorsSet" in res and "soloColorsSet" in res:
             if val:
                 cmds.polyColorSet(currentColorSet=True, colorSet="multiColorsSet")
             else:
@@ -777,12 +779,14 @@ class SkinPaintWin(QtWidgets.QDialog):
         for btnName in ["pickVertex_btn", "pickInfluence_btn"]:
             self.__dict__[btnName].setEnabled(False)
         self.setStyleSheet(styleSheet)
+        self.changeMultiSolo(-1)
 
     def paintStart(self):
         self.EVENTCATCHER.open()  # adEventFilters ()
         for btnName in ["pickVertex_btn", "pickInfluence_btn"]:
             self.__dict__[btnName].setEnabled(True)
         self.setStyleSheet(styleSheet + "SkinPaintWin {border : 2px solid red}")
+        self.changeMultiSolo(self.multi_rb.isChecked())
 
 
 # -------------------------------------------------------------------------------
