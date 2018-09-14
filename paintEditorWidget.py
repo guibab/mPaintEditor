@@ -273,11 +273,12 @@ class SkinPaintWin(QtWidgets.QDialog):
         cmds.scriptJob(kill=self.refreshSJ, force=True)
         # for callBck in self.close_callback : OpenMaya.MSceneMessage.removeCallback(callBck)
 
-    commandIndex = 0
+    commandIndex = -1
     value = 1.0
     commandArray = ["add", "rmv", "addPerc", "abs", "smooth", "sharpen"]
 
     def storePrevCommandValue(self):
+        # print "call prevCommand"
         if self.commandIndex != -1:
             nmPrev = self.commandArray[self.commandIndex]
             cmds.optionVar(floatValue=[nmPrev + "_SkinPaintWin", self.value])
@@ -756,7 +757,7 @@ class SkinPaintWin(QtWidgets.QDialog):
                 displayLocator=False, getskinWeights=True, force=force
             )
         if resultData:
-            print "- refreshing -"
+            # print "- refreshing -"
             self.brushFunctions.bsd = self.dataOfSkin.getConnectedBlurskinDisplay()
             self.uiInfluenceTREE.clear()
             self.uiInfluenceTREE.dicWidgName = {}
