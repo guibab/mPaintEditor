@@ -363,8 +363,9 @@ class CatchEventsWidget(QtWidgets.QWidget):
     filterInstalled = False
     displayLabel = None
 
-    def __init__(self, connectedWindow=None):
+    def __init__(self, connectedWindow=None, thePaintContextName="artAttrContext"):
         super(CatchEventsWidget, self).__init__(rootWindow())
+        self.thePaintContextName = thePaintContextName
         self.setMask(QtGui.QRegion(0, 0, 1, 1))
         self.mainWindow = connectedWindow
         self.NPressed = False
@@ -432,7 +433,7 @@ class CatchEventsWidget(QtWidgets.QWidget):
                             # ctrl or shift has been released previously so we change button ---
                             # we need to do it in the script job, no other way ---
                             currContext = cmds.currentCtx()
-                            if currContext == "artAttrContext":
+                            if currContext == self.thePaintContextName:
                                 gArtAttrCurrentAttr = mel.eval("$tmp = $gArtAttrCurrentAttr")
                                 typeOfNode, node, attr = gArtAttrCurrentAttr.split(".")
                                 theFn = partial(cmds.evalDeferred, self.prevButton.click)

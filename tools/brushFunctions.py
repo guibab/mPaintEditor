@@ -2,8 +2,13 @@ from maya import cmds, mel
 from functools import partial
 
 # from dcc.maya import createMelProcedure
+
+
 class BrushFunctions:
-    def __init__(self, mainWindow=None):
+    verbose = False
+
+    def __init__(self, mainWindow=None, thePaintContextName="artAttrContext"):
+        self.thePaintContextName = thePaintContextName
         self.mainWindow = mainWindow
         self.bsd = ""
         mel.eval("source artAttrCreateMenuItems.mel")
@@ -77,7 +82,7 @@ class BrushFunctions:
             cmds.setAttr(self.bsd + ".command", mode)
 
     def setStampProfile(self, profile):
-        cmds.artAttrCtx("artAttrContext", edit=True, stampProfile=profile)
+        cmds.artAttrCtx(self.thePaintContextName, edit=True, stampProfile=profile)
 
     def togglePostSetting(self, val):
         if cmds.objExists(self.bsd):
@@ -90,6 +95,12 @@ class BrushFunctions:
     def setInfluenceIndex(self, infl):
         if cmds.objExists(self.bsd):
             cmds.setAttr(self.bsd + ".influenceIndex", infl)
+
+    def getCurrentInfluence(self):
+        if cmds.objExists(self.bsd):
+            return cmds.getAttr(self.bsd + ".influenceIndex")
+        else:
+            return -1
 
     def setColor(self, index, col):
         if cmds.objExists(self.bsd):
@@ -110,12 +121,12 @@ class BrushFunctions:
             cmds.setAttr(self.bsd + ".callUndo", True)
 
     def paintSkinOnProc(self):
-        print "--- entering blur skin Paint -----"
+        # print "--- entering blur skin Paint -----"
         self.createScriptJob()
         self.mainWindow.paintStart()
 
     def paintSkinOffProc(self):
-        print "--- exiting blur skin Paint -----"
+        # print "--- exiting blur skin Paint -----"
         self.mainWindow.paintEnd()
 
     def enterPaint(self):
@@ -131,7 +142,11 @@ class BrushFunctions:
         sel = cmds.ls(sl=True)
         if prt not in sel:
             cmds.select(prt)
-        mel.eval('artSetToolAndSelectAttr( "artAttrCtx", "{0}.paintAttr" );'.format(self.bsd))
+        mel.eval(
+            'artSetToolAndSelectAttr( "{1}", "{0}.paintAttr" );'.format(
+                self.bsd, self.thePaintContextName
+            )
+        )
         cmds.ArtPaintAttrTool()
         # fcProc = createMelProcedure(self.finalPaintBrush, [('int','slot')])
         # import __main__
@@ -162,12 +177,12 @@ class BrushFunctions:
                 cmds.scriptJob(kill=jobIndex)
 
     def callAfterPaint(self):
-        # print "-- painting post --"
         currContext = cmds.currentCtx()
-        if currContext == "artAttrContext":
+        print "-- painting post -- ", currContext
+        if currContext == self.thePaintContextName:
             gArtAttrCurrentAttr = mel.eval("$tmp = $gArtAttrCurrentAttr")
             typeOfNode, node, attr = gArtAttrCurrentAttr.split(".")
-
+            print "data " + typeOfNode, node, attr
             arrayValues = cmds.getAttr(node + "." + attr)
             # check the values ---------------
             doSetCommand = False

@@ -14,9 +14,11 @@ import numpy as np
 from studio.gui.resource import Icons
 from mWeightEditor.tools.skinData import DataOfSkin
 from mWeightEditor.tools.spinnerSlider import ValueSetting, ButtonWithValue
-from mWeightEditor.tools.utils import GlobalContext
+from mWeightEditor.tools.utils import GlobalContext, toggleBlockSignals
 from tools.brushFunctions import BrushFunctions
 from tools.catchEventsUI import CatchEventsWidget
+
+thePaintContextName = "artAttrContext"
 
 
 class ValueSettingPE(ValueSetting):
@@ -24,8 +26,8 @@ class ValueSettingPE(ValueSetting):
         self.mainWindow.value = theVal
 
     def postSet(self):
-        if cmds.currentCtx() == "artAttrContext":
-            cmds.artAttrCtx("artAttrContext", e=True, value=self.mainWindow.value)
+        if cmds.currentCtx() == thePaintContextName:
+            cmds.artAttrCtx(thePaintContextName, e=True, value=self.mainWindow.value)
 
 
 def getIcon(iconNm):
@@ -150,6 +152,9 @@ class SkinPaintWin(QtWidgets.QDialog):
 
         if not cmds.pluginInfo("blurSkin", query=True, loaded=True):
             cmds.loadPlugin("blurSkin")
+        if not cmds.artAttrCtx(thePaintContextName, query=True, ex=True):
+            cmds.artAttrCtx(name=thePaintContextName)
+
         blurdev.gui.loadUi(__file__, self)
 
         self.useShortestNames = (
@@ -159,18 +164,20 @@ class SkinPaintWin(QtWidgets.QDialog):
         )
         self.dataOfSkin = DataOfSkin(useShortestNames=self.useShortestNames)
 
-        self.brushFunctions = BrushFunctions(self)
-
+        self.brushFunctions = BrushFunctions(self, thePaintContextName=thePaintContextName)
         self.createWindow()
         self.setStyleSheet(styleSheet)
         self.setWindowDisplay()
 
-        # self.addCallBacks ()
+        self.addCallBacks()
         self.buildRCMenu()
+        self.uiInfluenceTREE.clear()
         self.refresh()
 
         if self.EVENTCATCHER == None:
-            self.EVENTCATCHER = CatchEventsWidget(connectedWindow=self)
+            self.EVENTCATCHER = CatchEventsWidget(
+                connectedWindow=self, thePaintContextName=thePaintContextName
+            )
 
     def buildRCMenu(self):
         self.popMenu = QtWidgets.QMenu(self.uiInfluenceTREE)
@@ -253,7 +260,7 @@ class SkinPaintWin(QtWidgets.QDialog):
                 thebtn.setChecked(True)
 
     def addCallBacks(self):
-        self.refreshSJ = cmds.scriptJob(event=["SelectionChanged", self.refresh])
+        self.refreshSJ = cmds.scriptJob(event=["SelectionChanged", self.refreshCallBack])
         """
         #self.listJobEvents =[refreshSJ] 
         sceneUpdateCallback = OpenMaya.MSceneMessage.addCallback(OpenMaya.MSceneMessage.kBeforeNew, self.deselectAll )  #kSceneUpdate
@@ -263,7 +270,7 @@ class SkinPaintWin(QtWidgets.QDialog):
 
     def deleteCallBacks(self):
         self.brushFunctions.deleteTheJobs()
-        # cmds.scriptJob( kill=self.refreshSJ, force=True)
+        cmds.scriptJob(kill=self.refreshSJ, force=True)
         # for callBck in self.close_callback : OpenMaya.MSceneMessage.removeCallback(callBck)
 
     commandIndex = 0
@@ -380,16 +387,9 @@ class SkinPaintWin(QtWidgets.QDialog):
                 item.setHidden(item.isLocked())
             self.showLocks_btn.setIcon(_icons["eye-half"])
 
-    def transferValues(self):
-        self.brushFunctions.setPaintMode(self.commandIndex)
-        cmds.artAttrCtx("artAttrContext", e=True, value=self.value)
-        self.brushFunctions.setSmoothOptions(self.repeatBTN.precision, self.depthBTN.precision)
-        self.influenceSelChanged()
-        self.brushFunctions.togglePostSetting(self.postSet_cb.isChecked())
-
     def changeOfValue(self):
-        if cmds.currentCtx() == "artAttrContext":
-            currentVal = cmds.artAttrCtx("artAttrContext", q=True, value=True)
+        if cmds.currentCtx() == thePaintContextName:
+            currentVal = cmds.artAttrCtx(thePaintContextName, q=True, value=True)
             self.setBrushValue(currentVal)
 
     def enterPaint(self):
@@ -401,8 +401,19 @@ class SkinPaintWin(QtWidgets.QDialog):
                 self.brushFunctions.doAddColorNode(
                     self.dataOfSkin.deformedShape, self.dataOfSkin.theSkinCluster
                 )
-            self.brushFunctions.enterPaint()
             self.transferValues()
+            self.brushFunctions.enterPaint()
+
+    def transferValues(self):
+        self.brushFunctions.setPaintMode(self.commandIndex)
+        cmds.artAttrCtx(thePaintContextName, e=True, value=self.value)
+        self.brushFunctions.setSmoothOptions(self.repeatBTN.precision, self.depthBTN.precision)
+        self.influenceSelChanged()
+        self.brushFunctions.togglePostSetting(self.postSet_cb.isChecked())
+
+        self.changeMultiSolo(self.multi_rb.isChecked())
+
+        # self.brushFunctions.setColor (self.postSet_cb.isChecked())
 
     def updateOptionEnable(self, toggleValue):
         setOn = self.smooth_btn.isChecked() or self.sharpen_btn.isChecked()
@@ -410,7 +421,7 @@ class SkinPaintWin(QtWidgets.QDialog):
             btn.setEnabled(setOn)
 
     def changeMultiSolo(self, val):
-        res = cmds.polyColorSet(query=True, allColorSets=True)
+        res = cmds.polyColorSet(query=True, allColorSets=True) or []
         if "multiColorsSet" in res and "soloColorsSet" in res:
             if val:
                 cmds.polyColorSet(currentColorSet=True, colorSet="multiColorsSet")
@@ -491,6 +502,9 @@ class SkinPaintWin(QtWidgets.QDialog):
             thebtn.clicked.connect(partial(self.brushFunctions.setPaintMode, ind))
             thebtn.clicked.connect(partial(self.changeCommand, ind))
         # "gaussian", "poly", "solid" and "square"
+        if cmds.artAttrCtx(thePaintContextName, query=True, ex=True):
+            stampProfile = cmds.artAttrCtx(thePaintContextName, query=True, stampProfile=True)
+            self.__dict__[stampProfile + "_btn"].setChecked(True)
         for ind, nm in enumerate(["gaussian", "poly", "solid", "square"]):
             thebtn = self.__dict__[nm + "_btn"]
             thebtn.setText("")
@@ -545,7 +559,7 @@ class SkinPaintWin(QtWidgets.QDialog):
         __main__.BLURstartPickVtx = self.startpickVtx
 
         currContext = cmds.currentCtx()
-        self.inPainting = currContext == "artAttrContext"
+        self.inPainting = currContext == thePaintContextName
 
         # cmds.select (cl=True)
 
@@ -690,7 +704,11 @@ class SkinPaintWin(QtWidgets.QDialog):
             ind = self.dataOfSkin.driverNames.index(influences[0])
             self.brushFunctions.setInfluenceIndex(ind)
         else:
-            print "clear influence"
+            inflInd = self.brushFunctions.getCurrentInfluence()
+            if inflInd != -1:
+                with toggleBlockSignals([self.uiInfluenceTREE]):
+                    self.uiInfluenceTREE.setCurrentItem(self.uiInfluenceTREE.topLevelItem(inflInd))
+        #    print "clear influence"
 
     def filterInfluences(self, newText):
         self.pinSelection_btn.setChecked(False)
@@ -724,11 +742,21 @@ class SkinPaintWin(QtWidgets.QDialog):
             )
             self.brushFunctions.setInfluenceIndex(int(self.highestInfluence))
 
+    def refreshCallBack(self):
+        currContext = cmds.currentCtx()
+        if (
+            not self.lock_btn.isChecked() and currContext != thePaintContextName
+        ):  # dont refresh for paint
+            self.refresh()
+
     def refresh(self, force=False):
         # print "refresh CALLED"
-        with GlobalContext(message="dataOfSkin getAllData", doPrint=True):
-            resultData = self.dataOfSkin.getAllData(displayLocator=False, getskinWeights=True)
+        with GlobalContext(message="paintEditor getAllData", doPrint=False):
+            resultData = self.dataOfSkin.getAllData(
+                displayLocator=False, getskinWeights=True, force=force
+            )
         if resultData:
+            print "- refreshing -"
             self.brushFunctions.bsd = self.dataOfSkin.getConnectedBlurskinDisplay()
             self.uiInfluenceTREE.clear()
             self.uiInfluenceTREE.dicWidgName = {}
