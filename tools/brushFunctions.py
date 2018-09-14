@@ -1,5 +1,6 @@
 from maya import cmds, mel
 from functools import partial
+import os
 
 # from dcc.maya import createMelProcedure
 
@@ -147,20 +148,29 @@ class BrushFunctions:
                 self.bsd, self.thePaintContextName
             )
         )
-        cmds.ArtPaintAttrTool()
+        # cmds.ArtPaintAttrTool ()
+
         # fcProc = createMelProcedure(self.finalPaintBrush, [('int','slot')])
         # import __main__
         # __main__.applyCallBack = True
+        fileVar = os.path.realpath(__file__)
+        uiFolder, filename = os.path.split(fileVar)
+        iconPth = os.path.join(uiFolder[:-6], "img", "icon.png")
+        # print iconPth
+
         paintArgs = {
             "outline": True,
             "colorfeedback": False,
             "clamp": "both",
             "clamplower": 0.0,
             "clampupper": 1.0,
+            "image1": iconPth,
             "toolOnProc": 'python ("BLURpaintSkinOnProc()");',
             "toolOffProc": 'python ("BLURpaintSkinOffProc()");',
         }
-        cmds.artAttrCtx(cmds.currentCtx(), edit=True, **paintArgs)
+
+        cmds.artAttrCtx(self.thePaintContextName, edit=True, **paintArgs)
+        cmds.setToolTo(self.thePaintContextName)
 
     def createScriptJob(self):
         self.deleteTheJobs()
@@ -178,11 +188,11 @@ class BrushFunctions:
 
     def callAfterPaint(self):
         currContext = cmds.currentCtx()
-        print "-- painting post -- ", currContext
+        # print "-- painting post -- ", currContext
         if currContext == self.thePaintContextName:
             gArtAttrCurrentAttr = mel.eval("$tmp = $gArtAttrCurrentAttr")
             typeOfNode, node, attr = gArtAttrCurrentAttr.split(".")
-            print "data " + typeOfNode, node, attr
+            # print "data " + typeOfNode,node,attr
             arrayValues = cmds.getAttr(node + "." + attr)
             # check the values ---------------
             doSetCommand = False

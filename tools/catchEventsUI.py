@@ -481,9 +481,9 @@ class CatchEventsWidget(QtWidgets.QWidget):
                 self.CtrlOrShiftPressed = True
                 self.CtrlOrShiftPaint = False
                 self.prevButton = self.mainWindow.getEnabledButton()
-                # self.mainWindow.rmv_btn.setChecked(True)
-                # self.mainWindow.brushFunctions.setPaintMode(1) # remove
-                self.mainWindow.rmv_btn.click()
+                self.mainWindow.rmv_btn.setChecked(True)
+                self.mainWindow.brushFunctions.setPaintMode(1)  # remove
+                # self.mainWindow.rmv_btn.click()
                 return True
             elif event.key() == QtCore.Qt.Key_Shift:
                 if self.verbose:

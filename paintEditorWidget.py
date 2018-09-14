@@ -18,7 +18,7 @@ from mWeightEditor.tools.utils import GlobalContext, toggleBlockSignals
 from tools.brushFunctions import BrushFunctions
 from tools.catchEventsUI import CatchEventsWidget
 
-thePaintContextName = "artAttrContext"
+thePaintContextName = "BlurSkinartAttrContext"
 
 
 class ValueSettingPE(ValueSetting):
