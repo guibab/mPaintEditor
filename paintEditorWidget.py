@@ -233,7 +233,7 @@ class SkinPaintWin(QtWidgets.QDialog):
         ]
         for item in allItems:
             if item.isZeroDfm:
-                item.setHidden(self.showZeroDeformers)
+                item.setHidden(not self.showZeroDeformers)
 
     def setWindowDisplay(self):
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.Tool)
@@ -357,11 +357,11 @@ class SkinPaintWin(QtWidgets.QDialog):
             self.pinSelection_btn.setIcon(_icons["pinOn"])
             for item in allItems:
                 toHide = item not in selectedItems
-                toHide |= self.showZeroDeformers and item.isZeroDfm
+                toHide |= not self.showZeroDeformers and item.isZeroDfm
                 item.setHidden(toHide)
         else:
             for item in allItems:
-                toHide = self.showZeroDeformers and item.isZeroDfm
+                toHide = not self.showZeroDeformers and item.isZeroDfm
                 item.setHidden(toHide)
             self.pinSelection_btn.setIcon(_icons["pinOff"])
         self.unPin = not val
@@ -634,13 +634,16 @@ class SkinPaintWin(QtWidgets.QDialog):
             if column == 1:
                 cmds.select(txt)
             elif column == 0:
-                pos = QtGui.QCursor().pos()
+                pos = QtGui.QCursor().pos() - QtCore.QPoint(355, 100)
                 theColor = [el / 255.0 for el in item.color()]
                 cmds.colorEditor(mini=True, position=[pos.x(), pos.y()], rgbValue=theColor)
                 if cmds.colorEditor(query=True, result=True):
                     values = cmds.colorEditor(query=True, rgb=True)
-                    toSet = [255.0 * el for el in values]
-                    print values
+                    nm = item._influence
+                    ind = item._index
+                    # print ind,nm, values
+                    self.brushFunctions.setColor(ind, values)
+                    item.setColor(values)
                     # cmds.displayRGBColor ("userDefined{0}".format (theUserDefinedIndex),*values)
 
     def influenceClicked(self, item, column):
@@ -731,14 +734,14 @@ class SkinPaintWin(QtWidgets.QDialog):
             self.uiInfluenceTREE.dicWidgName = {}
 
             for ind, nm in enumerate(self.dataOfSkin.driverNames):  # .shortDriverNames :
-                jointItem = InfluenceTreeWidgetItem(nm)
+                jointItem = InfluenceTreeWidgetItem(nm, ind)
                 # jointItem =  QtWidgets.QTreeWidgetItem()
                 # jointItem.setText (1, nm)
                 self.uiInfluenceTREE.addTopLevelItem(jointItem)
                 self.uiInfluenceTREE.dicWidgName[nm] = jointItem
 
                 jointItem.isZeroDfm = ind in self.dataOfSkin.hideColumnIndices
-                jointItem.setHidden(self.showZeroDeformers and jointItem.isZeroDfm)
+                jointItem.setHidden(not self.showZeroDeformers and jointItem.isZeroDfm)
 
     def paintEnd(self):
         self.EVENTCATCHER.fermer()  # removeFilters ()
@@ -758,6 +761,7 @@ class SkinPaintWin(QtWidgets.QDialog):
 # -------------------------------------------------------------------------------
 class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
 
+    isZeroDfm = False
     _colors = [
         (161, 105, 48),
         (159, 161, 48),
@@ -768,13 +772,20 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         (111, 48, 161),
         (161, 48, 105),
     ]
-    isZeroDfm = False
 
-    def __init__(self, influence):
+    def getColors(self):
+        self._colors = []
+        for i in xrange(1, 9):
+            col = cmds.displayRGBColor("userDefined{0}".format(i), q=True)
+            self._colors.append([int(el * 255) for el in col])
+
+    def __init__(self, influence, index):
         super(InfluenceTreeWidgetItem, self).__init__(["", influence])
         self._influence = influence
+        self._index = index
         self.regularBG = self.background(1)
         self.darkBG = QtGui.QBrush(QtGui.QColor(120, 120, 120))
+        self.getColors()
         self.setDisplay()
 
     def setDisplay(self):
@@ -795,8 +806,13 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         self.setDisplay()
     """
 
+    def setColor(self, col):
+        cmds.setAttr(self._influence + ".wireColorRGB", *col)
+        self.setIcon(0, self.colorIcon())
+
     def color(self):
-        return self._colors[cmds.getAttr(self._influence + ".objectColor")]
+        return [255.0 * el for el in cmds.getAttr(self._influence + ".wireColorRGB")[0]]
+        # return self._colors[cmds.getAttr(self._influence+'.objectColor')]
 
     def lockIcon(self):
         return Icons.getIcon("lock") if self.isLocked() else Icons.getIcon("lock-gray-unlocked")
@@ -827,35 +843,3 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
 # -------------------------------------------------------------------------------
 # COLOR
 # -------------------------------------------------------------------------------
-class ColorMenu(QtWidgets.QMenu):
-
-    _colors = [
-        (161, 105, 48),
-        (159, 161, 48),
-        (104, 161, 48),
-        (48, 161, 93),
-        (48, 161, 161),
-        (48, 103, 161),
-        (111, 48, 161),
-        (161, 48, 105),
-    ]
-
-    def __init__(self, parent):
-        super(ColorMenu, self).__init__(parent)
-
-        self._color = None
-
-        self.setFixedWidth(20)
-
-        for index, color in enumerate(self._colors):
-            pixmap = QtGui.QPixmap(12, 12)
-            pixmap.fill(QtGui.QColor(*color))
-            act = self.addAction("")
-            act.setIcon(QtGui.QIcon(pixmap))
-            act.triggered.connect(partial(self.pickColor, index))
-
-    def pickColor(self, index):
-        self._color = index
-
-    def color(self):
-        return self._color
