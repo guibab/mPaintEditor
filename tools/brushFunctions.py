@@ -1,6 +1,7 @@
 from maya import cmds, mel
 from functools import partial
 import os
+from mWeightEditor.tools.utils import deleteTheJobs
 
 # from dcc.maya import createMelProcedure
 
@@ -173,18 +174,11 @@ class BrushFunctions:
         cmds.setToolTo(self.thePaintContextName)
 
     def createScriptJob(self):
-        self.deleteTheJobs()
+        deleteTheJobs(toSearch="BrushFunctions.callAfterPaint")
         if cmds.objExists(self.bsd + ".paintAttr"):
             theJob = cmds.scriptJob(
                 runOnce=False, attributeChange=[self.bsd + ".paintAttr", self.callAfterPaint]
             )
-
-    def deleteTheJobs(self, toSearch="BrushFunctions.callAfterPaint"):
-        res = cmds.scriptJob(listJobs=True)
-        for job in res:
-            if toSearch in job:
-                jobIndex = int(job.split(":")[0])
-                cmds.scriptJob(kill=jobIndex)
 
     def callAfterPaint(self):
         currContext = cmds.currentCtx()
