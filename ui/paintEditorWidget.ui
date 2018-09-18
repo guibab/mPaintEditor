@@ -90,7 +90,7 @@
        </property>
        <property name="minimumSize">
         <size>
-         <width>190</width>
+         <width>200</width>
          <height>48</height>
         </size>
        </property>
@@ -234,9 +234,9 @@ p, li { white-space: pre-wrap; }
        <widget class="QWidget" name="verticalLayoutWidget">
         <property name="geometry">
          <rect>
-          <x>142</x>
+          <x>155</x>
           <y>2</y>
-          <width>46</width>
+          <width>42</width>
           <height>41</height>
          </rect>
         </property>
@@ -245,6 +245,25 @@ p, li { white-space: pre-wrap; }
           <number>1</number>
          </property>
         </layout>
+       </widget>
+       <widget class="QPushButton" name="lockPlacement_btn">
+        <property name="geometry">
+         <rect>
+          <x>136</x>
+          <y>1</y>
+          <width>16</width>
+          <height>44</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="checkable">
+         <bool>true</bool>
+        </property>
+        <property name="autoExclusive">
+         <bool>true</bool>
+        </property>
        </widget>
       </widget>
      </item>

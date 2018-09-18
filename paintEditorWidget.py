@@ -13,10 +13,10 @@ import re
 import numpy as np
 from studio.gui.resource import Icons
 from mWeightEditor.tools.skinData import DataOfSkin
-from mWeightEditor.tools.spinnerSlider import ValueSetting, ButtonWithValue
+from mWeightEditor.tools.spinnerSlider import ValueSetting, ButtonWithValue, VerticalBtn
 from mWeightEditor.tools.utils import GlobalContext, toggleBlockSignals, deleteTheJobs
 from tools.brushFunctions import BrushFunctions
-from tools.catchEventsUI import CatchEventsWidget
+from tools.catchEventsUI import CatchEventsWidget, rootWindow
 
 thePaintContextName = "BlurSkinartAttrContext"
 
@@ -122,6 +122,48 @@ HorizHeaderView{
 }
 """
 
+
+class HelpWidget(QtWidgets.QTreeWidget):
+    def __init__(self, mainWindow):
+        self.mainWindow = mainWindow
+        super(HelpWidget, self).__init__(rootWindow())
+        self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
+        self.setStyleSheet(styleSheet)
+        self.setColumnCount(2)
+        self.header().hide()
+        self.setWindowModality(QtCore.Qt.ApplicationModal)
+
+        # self.setStyleSheet("margin-left: 0px; border-radius: 25px; background: yellow; color: black; border: 1px solid black;")
+        self.populate()
+        self.setColumnWidth(0, 150)
+        self.resizeColumnToContents(1)
+        self.resize(250, 120)
+
+    def close(self):
+        self.mainWindow.setEnabled(True)
+        super(HelpWidget, self).close()
+
+    def populate(self):
+        lstShortCuts = [
+            ("Smooth ", "SHIFT"),
+            ("Remove ", "CTRL"),
+            ("markingMenu ", "0"),
+            ("pick Vertex ", "ALT + D"),
+            ("pick influence", "D"),
+            ("Toggle Solo Mode", "ALT + S"),
+            ("Toggle Wireframe", "ALT + W"),
+            ("Toggle Xray", "ALT + X"),
+        ]
+        for nm1, nm2 in lstShortCuts:
+            helpItem = QtWidgets.QTreeWidgetItem()
+            helpItem.setText(0, nm1)
+            helpItem.setText(1, nm2)
+            self.addTopLevelItem(helpItem)
+
+    def mousePressEvent(self, *args):
+        self.close()
+
+
 ###################################################################################
 #
 #   the window
@@ -175,6 +217,8 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.uiInfluenceTREE.clear()
         self.refresh()
 
+        self.theHelpWidget = HelpWidget(self)
+
         if self.EVENTCATCHER == None:
             self.EVENTCATCHER = CatchEventsWidget(
                 connectedWindow=self, thePaintContextName=thePaintContextName
@@ -199,6 +243,11 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.colorDialog.setWindowTitle("pick color")
         self.colorDialog.setWindowModality(QtCore.Qt.ApplicationModal)
 
+    def showHelp(self):
+        self.theHelpWidget.move(self.pos() + QtCore.QPoint(0.5 * (self.width() - 250 + 10), 40))
+        self.setEnabled(False)
+        self.theHelpWidget.show()
+
     def buildRCMenu(self):
         self.mainPopMenu = QtWidgets.QMenu(self)
         self.subMenuSoloColor = self.mainPopMenu.addMenu("solo color")
@@ -212,6 +261,7 @@ class SkinPaintWin(QtWidgets.QDialog):
             act = self.subMenuSoloColor.addAction(colType, theFn)
             act.setCheckable(True)
             act.setChecked(self.soloColorIndex == ind)
+        self.mainPopMenu.addAction("help", self.showHelp)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showMainMenu)
 
@@ -323,7 +373,7 @@ class SkinPaintWin(QtWidgets.QDialog):
 
     commandIndex = -1
     value = 1.0
-    commandArray = ["add", "rmv", "addPerc", "abs", "smooth", "sharpen"]
+    commandArray = ["add", "rmv", "addPerc", "abs", "smooth", "sharpen", "locks"]
 
     def storePrevCommandValue(self):
         # print "call prevCommand"
@@ -548,6 +598,13 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.uiInfluenceTREE.itemDoubleClicked.connect(self.influenceDoubleClicked)
         self.uiInfluenceTREE.itemClicked.connect(self.influenceClicked)
 
+        self.locks_btn = VerticalBtn("locks", self.lockPlacement_btn.parent())
+        self.lockPlacement_btn.hide()
+        self.locks_btn.move(self.lockPlacement_btn.pos())
+        self.locks_btn.resize(self.lockPlacement_btn.size())
+        self.locks_btn.setCheckable(True)
+        self.locks_btn.setAutoExclusive(True)
+
         for ind, nm in enumerate(self.commandArray):
             thebtn = self.__dict__[nm + "_btn"]
             thebtn.clicked.connect(partial(self.brushFunctions.setPaintMode, ind))
@@ -720,6 +777,7 @@ class SkinPaintWin(QtWidgets.QDialog):
         text = item.text(1)
         if text in self.dataOfSkin.driverNames:
             ind = self.dataOfSkin.driverNames.index(text)
+            # ind = item._index
             self.brushFunctions.setInfluenceIndex(ind)
 
     def applyLock(self, typeOfLock):
