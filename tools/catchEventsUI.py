@@ -426,6 +426,7 @@ class CatchEventsWidget(QtWidgets.QWidget):
 
         self.OPressed = False
         self.markingMenuShown = False
+        self.closingNextPressMarkingMenu = False
 
         self.CtrlOrShiftPressed = False
         self.CtrlOrShiftPaint = False
