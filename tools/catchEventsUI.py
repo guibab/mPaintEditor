@@ -30,7 +30,6 @@ def callMarkingMenu():
         "optionBox": False,
         "enable": True,
         "data": 0,
-        "radialPosition": "N",
         "allowOptionBoxes": True,
         "postMenuCommandOnce": False,
         "enableCommandRepeat": True,
@@ -55,7 +54,21 @@ def callMarkingMenu():
         kwArgs["command"] = 'python("import __main__;__main__.paintEditor.' + btn + '_btn.click()")'
         # kwArgs ["command"] =  "print \"hi\""
         cmds.menuItem("menuEditorMenuItem{0}".format(ind + 1), **kwArgs)
-    mel.eval("setParent -m ..;")
+    kwArgs.pop("radialPosition", None)
+    kwArgs["label"] = "solo color"
+    kwArgs["subMenu"] = True
+
+    cmds.menuItem("menuEditorMenuItem{0}".format(len(lstCommands) + 1), **kwArgs)
+    kwArgs["subMenu"] = False
+    for ind, colType in enumerate(["white", "lava", "influence"]):
+        kwArgs["label"] = colType
+        kwArgs["command"] = (
+            'python("import __main__;__main__.paintEditor.updateSoloColor (' + str(ind) + ')")'
+        )
+        cmds.menuItem("menuEditorMenuItemCol{0}".format(ind + 1), **kwArgs)
+    mel.eval("setParent -menu ..;")
+    # setParent -menu
+    mel.eval("setParent -menu ..;")
 
 
 def rootWindow():
