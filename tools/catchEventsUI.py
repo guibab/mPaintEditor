@@ -541,25 +541,26 @@ class CatchEventsWidget(QtWidgets.QWidget):
                                 )
                 return super(CatchEventsWidget, self).eventFilter(obj, event)
             else:  # remove the shift and control modifiers
-                altShift = (
-                    event.modifiers()
-                    == QtCore.Qt.AltModifier | event.modifiers()
-                    == QtCore.Qt.ShiftModifier
-                )
-                altCtrl = (
-                    event.modifiers()
-                    == QtCore.Qt.AltModifier | event.modifiers()
-                    == QtCore.Qt.ControlModifier
-                )
-                theModifiers = QtCore.Qt.KeyboardModifiers(QtCore.Qt.NoModifier)
-                if altShift or altCtrl:
-                    theModifiers = QtCore.Qt.KeyboardModifiers(QtCore.Qt.AltModifier)
-                theMouseEvent = QtGui.QMouseEvent(
-                    event.type(), event.pos(), event.button(), event.buttons(), theModifiers
-                )
-                QApplication.instance().postEvent(obj, theMouseEvent)
-                event.ignore()
-                return True
+                if obj is not self.parent():
+                    altShift = (
+                        event.modifiers()
+                        == QtCore.Qt.AltModifier | event.modifiers()
+                        == QtCore.Qt.ShiftModifier
+                    )
+                    altCtrl = (
+                        event.modifiers()
+                        == QtCore.Qt.AltModifier | event.modifiers()
+                        == QtCore.Qt.ControlModifier
+                    )
+                    theModifiers = QtCore.Qt.KeyboardModifiers(QtCore.Qt.NoModifier)
+                    if altShift or altCtrl:
+                        theModifiers = QtCore.Qt.KeyboardModifiers(QtCore.Qt.AltModifier)
+                    theMouseEvent = QtGui.QMouseEvent(
+                        event.type(), event.pos(), event.button(), event.buttons(), theModifiers
+                    )
+                    QApplication.instance().postEvent(obj, theMouseEvent)
+                    event.ignore()
+                    return True
             return super(CatchEventsWidget, self).eventFilter(obj, event)
         # return in mouseButton Press or Release
 
@@ -634,8 +635,11 @@ class CatchEventsWidget(QtWidgets.QWidget):
                 self.CtrlOrShiftPressed = True
                 self.CtrlOrShiftPaint = False
                 self.prevButton = self.mainWindow.getEnabledButton()
-                self.mainWindow.rmv_btn.setChecked(True)
-                self.mainWindow.brushFunctions.setPaintMode(1)  # remove
+                if self.prevButton == self.mainWindow.add_btn:
+                    self.mainWindow.rmv_btn.setChecked(True)
+                    self.mainWindow.brushFunctions.setPaintMode(1)  # remove
+                elif self.prevButton == self.mainWindow.locks_btn:
+                    self.mainWindow.brushFunctions.setPaintMode(7)  # remove
                 # self.mainWindow.rmv_btn.click()
                 return True
             elif event.key() == QtCore.Qt.Key_Shift:
