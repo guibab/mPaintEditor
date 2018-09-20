@@ -915,7 +915,14 @@ class SkinPaintWin(QtWidgets.QDialog):
 
     def paintStart(self):
         # self.enterPaint ( withBrushFn = False)
-        self.EVENTCATCHER.open()  # adEventFilters ()
+
+        self.brushFunctions.bsd = self.dataOfSkin.getConnectedBlurskinDisplay()
+        if not self.brushFunctions.bsd:
+            self.brushFunctions.doAddColorNode(
+                self.dataOfSkin.deformedShape, self.dataOfSkin.theSkinCluster
+            )
+            self.transferValues()
+        self.EVENTCATCHER.open()
         for btnName in ["pickVertex_btn", "pickInfluence_btn"]:
             self.__dict__[btnName].setEnabled(True)
         self.setStyleSheet(styleSheet + "SkinPaintWin {border : 2px solid red}")
