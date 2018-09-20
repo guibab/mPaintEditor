@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>340</width>
-    <height>835</height>
+    <height>620</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -763,6 +763,136 @@ p, li { white-space: pre-wrap; }
        <string>Joint2</string>
       </property>
      </item>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="option_GB">
+     <property name="title">
+      <string>options</string>
+     </property>
+     <property name="checkable">
+      <bool>true</bool>
+     </property>
+     <property name="checked">
+      <bool>false</bool>
+     </property>
+     <widget class="QLabel" name="label_2">
+      <property name="geometry">
+       <rect>
+        <x>7</x>
+        <y>17</y>
+        <width>55</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="layoutDirection">
+       <enum>Qt::RightToLeft</enum>
+      </property>
+      <property name="text">
+       <string>Min Color</string>
+      </property>
+     </widget>
+     <widget class="QDoubleSpinBox" name="minColor_sb">
+      <property name="geometry">
+       <rect>
+        <x>65</x>
+        <y>16</y>
+        <width>60</width>
+        <height>18</height>
+       </rect>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>60</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="decimals">
+       <number>1</number>
+      </property>
+      <property name="maximum">
+       <double>1.000000000000000</double>
+      </property>
+      <property name="singleStep">
+       <double>0.100000000000000</double>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_3">
+      <property name="geometry">
+       <rect>
+        <x>7</x>
+        <y>38</y>
+        <width>55</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="layoutDirection">
+       <enum>Qt::RightToLeft</enum>
+      </property>
+      <property name="text">
+       <string>Max Color</string>
+      </property>
+     </widget>
+     <widget class="QDoubleSpinBox" name="maxColor_sb">
+      <property name="geometry">
+       <rect>
+        <x>65</x>
+        <y>39</y>
+        <width>60</width>
+        <height>18</height>
+       </rect>
+      </property>
+      <property name="decimals">
+       <number>1</number>
+      </property>
+      <property name="maximum">
+       <double>1.000000000000000</double>
+      </property>
+      <property name="singleStep">
+       <double>0.100000000000000</double>
+      </property>
+      <property name="value">
+       <double>1.000000000000000</double>
+      </property>
+     </widget>
+     <widget class="QComboBox" name="soloColor_cb">
+      <property name="geometry">
+       <rect>
+        <x>140</x>
+        <y>40</y>
+        <width>81</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <item>
+       <property name="text">
+        <string>White</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Lava</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Influence</string>
+       </property>
+      </item>
+     </widget>
+     <widget class="QLabel" name="label_4">
+      <property name="geometry">
+       <rect>
+        <x>142</x>
+        <y>22</y>
+        <width>80</width>
+        <height>13</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Solo Color</string>
+      </property>
+     </widget>
     </widget>
    </item>
   </layout>

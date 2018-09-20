@@ -95,7 +95,6 @@ QWidget:disabled {
     font:italic;
     color:grey;
     }
-
 TableView {
      selection-background-color: #a0a0ff;
      background : #aba8a6;
@@ -126,6 +125,23 @@ HorizHeaderView{
     color: black;
     border : 0px solid black;
 }
+QGroupBox{
+    background-color: #aba8a6;
+    color : black;
+    border :0 px; 
+}
+QGroupBox::checked{
+    background-color: #aba8a6;
+    color : black;
+    border : 1px solid rgb(120, 120, 120); 
+}
+QGroupBox::indicator {
+    width: 13px;
+    height: 13px;
+}
+QComboBox{
+    border : 1px solid rgb(120, 120, 120); 
+}
 """
 
 
@@ -140,10 +156,10 @@ class HelpWidget(QtWidgets.QTreeWidget):
         self.setWindowModality(QtCore.Qt.ApplicationModal)
 
         # self.setStyleSheet("margin-left: 0px; border-radius: 25px; background: yellow; color: black; border: 1px solid black;")
-        self.populate()
+        nb = self.populate() - 1
         self.setColumnWidth(0, 150)
         self.resizeColumnToContents(1)
-        self.resize(250, 120)
+        self.resize(250, nb * 15)
 
     def close(self):
         self.mainWindow.setEnabled(True)
@@ -159,12 +175,15 @@ class HelpWidget(QtWidgets.QTreeWidget):
             ("Toggle Solo Mode", "ALT + S"),
             ("Toggle Wireframe", "ALT + W"),
             ("Toggle Xray", "ALT + X"),
+            ("Undo", "CTRL + Z"),
+            ("update Value", "N"),
         ]
         for nm1, nm2 in lstShortCuts:
             helpItem = QtWidgets.QTreeWidgetItem()
             helpItem.setText(0, nm1)
             helpItem.setText(1, nm2)
             self.addTopLevelItem(helpItem)
+        return len(lstShortCuts)
 
     def mousePressEvent(self, *args):
         self.close()
@@ -325,6 +344,9 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.mainPopMenu.exec_(self.mapToGlobal(pos))
 
     def updateSoloColor(self, ind):
+        self.soloColor_cb.setCurrentIndex(ind)
+
+    def comboSoloColorChanged(self, ind):
         self.soloColorIndex = ind
         self.brushFunctions.setBSDAttr("soloColType", self.soloColorIndex)
         cmds.optionVar(intValue=["soloColor_SkinPaintWin", ind])
@@ -540,6 +562,12 @@ class SkinPaintWin(QtWidgets.QDialog):
                 cmds.polyColorSet(currentColorSet=True, colorSet="soloColorsSet")
         self.brushFunctions.setBSDAttr("colorType", int(not val))
 
+    def resizeOption_GB(self, val):
+        if val:
+            self.option_GB.setMinimumHeight(60)
+        else:
+            self.option_GB.setMinimumHeight(0)
+
     def createWindow(self):
         self.unLock = True
         self.unPin = True
@@ -605,7 +633,10 @@ class SkinPaintWin(QtWidgets.QDialog):
             partial(self.brushFunctions.setBSDAttr, "smoothRepeat")
         )
         self.depthBTN._valueChanged.connect(partial(self.brushFunctions.setBSDAttr, "smoothDepth"))
+        self.minColor_sb.valueChanged.connect(partial(self.brushFunctions.setBSDAttr, "minColor"))
+        self.maxColor_sb.valueChanged.connect(partial(self.brushFunctions.setBSDAttr, "maxColor"))
 
+        self.soloColor_cb.currentIndexChanged.connect(self.comboSoloColorChanged)
         # self.uiInfluenceTREE.itemSelectionChanged.connect(self.influenceSelChanged)
         self.uiInfluenceTREE.itemDoubleClicked.connect(self.influenceDoubleClicked)
         self.uiInfluenceTREE.itemClicked.connect(self.influenceClicked)
@@ -616,6 +647,8 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.locks_btn.resize(self.lockPlacement_btn.size())
         self.locks_btn.setCheckable(True)
         self.locks_btn.setAutoExclusive(True)
+
+        self.option_GB.toggled.connect(self.resizeOption_GB)
 
         for ind, nm in enumerate(self.commandArray):
             thebtn = self.__dict__[nm + "_btn"]
