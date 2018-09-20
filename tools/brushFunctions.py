@@ -61,7 +61,13 @@ class BrushFunctions:
         # print msh, skinCluster
         # print "doAddColorNode"
         cmds.setAttr(msh + ".displayColors", True)
-
+        """
+        inConnection = cmds.listConnections (skinCluster+".input[0].inputGeometry", s=True, d=False)
+        if cmds.nodeType (inConnection[0]) == "groupParts" : 
+            skinConn, inConn = cmds.listConnections (inConnection[0]+".ig", s=True, d=False, c=True, p=True)
+        else : 
+            skinConn, inConn = cmds.listConnections (skinCluster+".input[0].inputGeometry", s=True, d=False, p=True, c=True, scn=True)
+        """
         skinConn, inConn = cmds.listConnections(
             skinCluster + ".input[0].inputGeometry", s=True, d=False, p=True, c=True, scn=False
         )
