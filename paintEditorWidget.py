@@ -802,11 +802,13 @@ class SkinPaintWin(QtWidgets.QDialog):
                 cmds.select(txt)
             elif column == 0:
                 pos = QtGui.QCursor().pos() - QtCore.QPoint(355, 100)
-                theColor = [el / 255.0 for el in item.color()]
                 self.colorDialog.item = item
+                with toggleBlockSignals([self.colorDialog]):
+                    self.colorDialog.setCurrentColor(QtGui.QColor(*item.color()))
                 self.colorDialog.move(pos)
                 self.colorDialog.show()
                 """
+                theColor = [el/255. for el in item.color ()]
                 cmds.colorEditor(mini=True, position=[pos.x(), pos.y()], rgbValue = theColor)
                 if cmds.colorEditor(query=True, result=True):
                     values = cmds.colorEditor(query=True, rgb=True)
