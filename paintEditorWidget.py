@@ -61,6 +61,24 @@ _icons = {
     "removeUnused": Icons.getIcon("arrow-transition-270--red"),
     "randomColor": Icons.getIcon("color-swatch"),
 }
+
+INFLUENCE_COLORS = [
+    (0, 0, 224),
+    (224, 224, 0),
+    (224, 0, 224),
+    (96, 224, 192),
+    (224, 128, 0),
+    (192, 0, 192),
+    (0, 192, 64),
+    (192, 160, 0),
+    (160, 0, 32),
+    (128, 192, 224),
+    (224, 192, 128),
+    (64, 32, 160),
+    (192, 160, 32),
+    (224, 32, 160),
+]
+
 styleSheet = """
 QWidget {
     background:  #aba8a6;
@@ -567,6 +585,18 @@ class SkinPaintWin(QtWidgets.QDialog):
                 cmds.polyColorSet(currentColorSet=True, colorSet="soloColorsSet")
         self.brushFunctions.setBSDAttr("colorType", int(not val))
 
+    def addInfluences(self):
+        cmds.confirmDialog(m="addInfluences")
+
+    def removeInfluences(self):
+        cmds.confirmDialog(m="removeInfluences")
+
+    def removeUnusedInfluences(self):
+        cmds.confirmDialog(m="removeUnusedInfluences")
+
+    def randomColors(self):
+        cmds.confirmDialog(m="randomColors")
+
     def createWindow(self):
         self.unLock = True
         self.unPin = True
@@ -651,13 +681,17 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.option_cb.toggled.connect(self.option_GB.setVisible)
         self.option_GB.setVisible(False)
 
+        self.addInfluences_btn.clicked.connect(self.addInfluences)
+        self.removeInfluences_btn.clicked.connect(self.removeInfluences)
+        self.removeUnusedInfluences_btn.clicked.connect(self.removeUnusedInfluences)
+        self.randomColors_btn.clicked.connect(self.randomColors)
         for btn, icon in [
-            ("addInfluences_btn", "plus"),
-            ("removeInfluences_btn", "minus"),
-            ("removeUnusedInfluences_btn", "removeUnused"),
-            ("randomColors_btn", "randomColor"),
+            ("addInfluences", "plus"),
+            ("removeInfluences", "minus"),
+            ("removeUnusedInfluences", "removeUnused"),
+            ("randomColors", "randomColor"),
         ]:
-            theBtn = self.__dict__[btn]
+            theBtn = self.__dict__[btn + "_btn"]
             theBtn.setText("")
             theBtn.setIcon(_icons[icon])
         for ind, nm in enumerate(self.commandArray):
