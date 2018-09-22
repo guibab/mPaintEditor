@@ -56,6 +56,10 @@ _icons = {
     "refresh": Icons.getIcon("refresh"),
     "eye": Icons.getIcon("eye"),
     "eye-half": Icons.getIcon("eye-half"),
+    "plus": Icons.getIcon("plus-button"),
+    "minus": Icons.getIcon("minus-button"),
+    "removeUnused": Icons.getIcon("arrow-transition-270--red"),
+    "randomColor": Icons.getIcon("color-swatch"),
 }
 styleSheet = """
 QWidget {
@@ -135,9 +139,10 @@ QGroupBox::checked{
     color : black;
     border : 1px solid rgb(120, 120, 120); 
 }
+
 QGroupBox::indicator {
-    width: 13px;
-    height: 13px;
+    width: 0px;
+    height: 0px;
 }
 QComboBox{
     border : 1px solid rgb(120, 120, 120); 
@@ -562,12 +567,6 @@ class SkinPaintWin(QtWidgets.QDialog):
                 cmds.polyColorSet(currentColorSet=True, colorSet="soloColorsSet")
         self.brushFunctions.setBSDAttr("colorType", int(not val))
 
-    def resizeOption_GB(self, val):
-        if val:
-            self.option_GB.setMinimumHeight(60)
-        else:
-            self.option_GB.setMinimumHeight(0)
-
     def createWindow(self):
         self.unLock = True
         self.unPin = True
@@ -648,8 +647,19 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.locks_btn.setCheckable(True)
         self.locks_btn.setAutoExclusive(True)
 
-        self.option_GB.toggled.connect(self.resizeOption_GB)
+        self.option_cb.toggled.connect(self.option_GB.setChecked)
+        self.option_cb.toggled.connect(self.option_GB.setVisible)
+        self.option_GB.setVisible(False)
 
+        for btn, icon in [
+            ("addInfluences_btn", "plus"),
+            ("removeInfluences_btn", "minus"),
+            ("removeUnusedInfluences_btn", "removeUnused"),
+            ("randomColors_btn", "randomColor"),
+        ]:
+            theBtn = self.__dict__[btn]
+            theBtn.setText("")
+            theBtn.setIcon(_icons[icon])
         for ind, nm in enumerate(self.commandArray):
             thebtn = self.__dict__[nm + "_btn"]
             thebtn.clicked.connect(partial(self.brushFunctions.setPaintMode, ind))
@@ -929,6 +939,16 @@ class SkinPaintWin(QtWidgets.QDialog):
             self.uiInfluenceTREE.clear()
             self.uiInfluenceTREE.dicWidgName = {}
 
+            isPaintable = self.dataOfSkin.shapePath.apiType() == OpenMaya.MFn.kMesh
+            for uiObj in [
+                "options_widget",
+                "buttonWidg",
+                "widgetAbs",
+                "valueSetter",
+                "widget_paintBtns",
+                "option_GB",
+            ]:
+                self.__dict__[uiObj].setEnabled(isPaintable)
             for ind, nm in enumerate(self.dataOfSkin.driverNames):  # .shortDriverNames :
                 jointItem = InfluenceTreeWidgetItem(nm, ind)
                 # jointItem =  QtWidgets.QTreeWidgetItem()
