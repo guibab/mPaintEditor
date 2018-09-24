@@ -500,6 +500,13 @@ class CatchEventsWidget(QtWidgets.QWidget):
             event.type() in [QtCore.QEvent.MouseButtonPress, QtCore.QEvent.MouseButtonRelease]
             and event.modifiers() != QtCore.Qt.AltModifier
         ):
+            """
+            if obj is self : print "self"
+            elif obj is self.parent() : print "self Prt"
+            elif obj is self.parent().parent() : print "self Prt Prt"
+            elif obj is self.rootWin : print "self.rootWin"
+            else : print obj
+            """
             if event.modifiers() == QtCore.Qt.NoModifier:  # regular click
                 if event.type() == QtCore.QEvent.MouseButtonPress:  # click
                     if self.displayLabel:  # let's close the label
@@ -541,7 +548,7 @@ class CatchEventsWidget(QtWidgets.QWidget):
                                 )
                 return super(CatchEventsWidget, self).eventFilter(obj, event)
             else:  # remove the shift and control modifiers
-                if obj is not self.parent():
+                if obj is not self.parent() and not self.mainWindow.uiInfluenceTREE.isOn:
                     altShift = (
                         event.modifiers()
                         == QtCore.Qt.AltModifier | event.modifiers()
@@ -591,28 +598,41 @@ class CatchEventsWidget(QtWidgets.QWidget):
                 return super(CatchEventsWidget, self).eventFilter(obj, event)
             return super(CatchEventsWidget, self).eventFilter(obj, event)
         if event.type() == QtCore.QEvent.KeyPress:
-            if event.key() == QtCore.Qt.Key_O:
-                """
+            if event.key() == QtCore.Qt.Key_P:  # print info of the click press
                 active_view = OpenMayaUI.M3dView.active3dView()
                 sw = active_view.widget()
-                res = QtCompat.wrapInstance(  long(sw),QtWidgets.QWidget  )
+                res = QtCompat.wrapInstance(long(sw), QtWidgets.QWidget)
 
-                listModelPanels = [ el for el in cmds.getPanel (vis=True) if cmds.getPanel (to=el) == "modelPanel" ]
-                ptr = OpenMayaUI.MQtUtil.findControl(listModelPanels [0])
+                listModelPanels = [
+                    el for el in cmds.getPanel(vis=True) if cmds.getPanel(to=el) == "modelPanel"
+                ]
+                ptr = OpenMayaUI.MQtUtil.findControl(listModelPanels[0])
                 model_panel_4 = QtCompat.wrapInstance(long(ptr), QtWidgets.QWidget)
 
-                if res is obj : print "ViewPort"
-                elif res is self.mainMaya : print
-                elif obj is self.mainMaya : print "self.mainMaya"
-                elif obj is self : print "self"
-                elif obj is self.parent() : print "self Prt"
-                elif obj is self.parent().parent() : print "self Prt Prt"
-                elif obj is self.rootWin : print "self.rootWin"
-                elif obj is model_panel_4 : print "model_panel_4"
-                elif obj is model_panel_4.parent() : print "model_panel_4 Prt"
-                elif obj is model_panel_4.parent().parent() : print "model_panel_4 Prt PRT"
-                else : print obj
-                """
+                if res is obj:
+                    print "ViewPort"
+                elif res is self.mainMaya:
+                    print
+                elif obj is self.mainMaya:
+                    print "self.mainMaya"
+                elif obj is self:
+                    print "self"
+                elif obj is self.parent():
+                    print "self Prt"
+                elif obj is self.parent().parent():
+                    print "self Prt Prt"
+                elif obj is self.rootWin:
+                    print "self.rootWin"
+                elif obj is model_panel_4:
+                    print "model_panel_4"
+                elif obj is model_panel_4.parent():
+                    print "model_panel_4 Prt"
+                elif obj is model_panel_4.parent().parent():
+                    print "model_panel_4 Prt PRT"
+                else:
+                    print obj
+                return super(CatchEventsWidget, self).eventFilter(obj, event)
+            if event.key() == QtCore.Qt.Key_O:
                 if obj is self.EventFilterWidgetReceiver:
                     self.OPressed = True
                     # print "  OPressed"
@@ -628,7 +648,9 @@ class CatchEventsWidget(QtWidgets.QWidget):
                 # print "set self.markingMenuShown False  OPressed"
                 # event.accept ()
                 # return True
-            elif event.key() == QtCore.Qt.Key_Control:
+            elif event.key() == QtCore.Qt.Key_Control and not (
+                self.CtrlOrShiftPressed or self.CtrlOrShiftPaint
+            ):
                 if self.verbose:
                     print "custom CONTROL pressed"
                 event.ignore()
@@ -642,7 +664,9 @@ class CatchEventsWidget(QtWidgets.QWidget):
                     self.mainWindow.brushFunctions.setPaintMode(7)  # remove
                 # self.mainWindow.rmv_btn.click()
                 return True
-            elif event.key() == QtCore.Qt.Key_Shift:
+            elif event.key() == QtCore.Qt.Key_Shift and not (
+                self.CtrlOrShiftPressed or self.CtrlOrShiftPaint
+            ):
                 if self.verbose:
                     print "custom SHIFT pressed"
                 event.ignore()

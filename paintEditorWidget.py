@@ -602,6 +602,19 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.unPin = True
         dialogLayout = self.layout()
 
+        # changing the treeWidghet
+        for ind in range(dialogLayout.count()):
+            it = dialogLayout.itemAt(ind)
+            if isinstance(it, QtWidgets.QWidgetItem) and it.widget() == self.uiInfluenceTREE:
+                break
+        # for propName in ["selectionMode", "indentation","columnCount", "headerVisible", "headerDefaultSectionSize", "headerDefaultSectionSize", "headerVisible"]:
+        # dialogLayout.removeItem(it)
+        self.uiInfluenceTREE.deleteLater()
+
+        self.uiInfluenceTREE = InfluenceTree(self)
+        dialogLayout.insertWidget(ind, self.uiInfluenceTREE)
+        # end changing the treeWidghet
+
         self.lock_btn.setIcon(_icons["unlock"])
         self.refresh_btn.setIcon(_icons["refresh"])
         self.lock_btn.toggled.connect(self.changeLock)
@@ -866,6 +879,7 @@ class SkinPaintWin(QtWidgets.QDialog):
 
     def influenceClicked(self, item, column):
         text = item.text(1)
+        # print "CLICKED " + text
         if text in self.dataOfSkin.driverNames:
             ind = self.dataOfSkin.driverNames.index(text)
             # ind = item._index
@@ -1021,6 +1035,29 @@ class SkinPaintWin(QtWidgets.QDialog):
 # -------------------------------------------------------------------------------
 # INFLUENCE ITEM
 # -------------------------------------------------------------------------------
+
+
+class InfluenceTree(QtWidgets.QTreeWidget):
+    def __init__(self, *args):
+        self.isOn = False
+        super(InfluenceTree, self).__init__(*args)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.setIndentation(5)
+        self.setColumnCount(2)
+        self.header().hide()
+        self.setColumnWidth(0, 20)
+
+    def enterEvent(self, event):
+        # print "enterEvent TREE"
+        self.isOn = True
+        super(InfluenceTree, self).enterEvent(event)
+
+    def leaveEvent(self, event):
+        # print "leaveEvent TREE"
+        self.isOn = False
+        super(InfluenceTree, self).leaveEvent(event)
+
+
 class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
 
     isZeroDfm = False
