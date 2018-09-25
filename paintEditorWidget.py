@@ -980,6 +980,7 @@ class SkinPaintWin(QtWidgets.QDialog):
             for nm, it in self.uiInfluenceTREE.dicWidgName.iteritems():
                 foundText = False
                 for txt in newTexts:
+                    txt = txt.replace("*", ".*")
                     foundText = re.search(txt, nm, re.IGNORECASE) != None
                     if foundText:
                         break
@@ -1046,7 +1047,8 @@ class SkinPaintWin(QtWidgets.QDialog):
                 self.__dict__[uiObj].setEnabled(isPaintable)
             for ind, nm in enumerate(self.dataOfSkin.driverNames):  # .shortDriverNames :
                 theIndexJnt = self.dataOfSkin.indicesJoints[ind]
-                jointItem = InfluenceTreeWidgetItem(nm, theIndexJnt)
+                theCol = self.uiInfluenceTREE.getDeformerColor(nm)
+                jointItem = InfluenceTreeWidgetItem(nm, theIndexJnt, theCol)
                 # jointItem =  QtWidgets.QTreeWidgetItem()
                 # jointItem.setText (1, nm)
                 self.uiInfluenceTREE.addTopLevelItem(jointItem)
@@ -1086,6 +1088,20 @@ class SkinPaintWin(QtWidgets.QDialog):
 
 
 class InfluenceTree(QtWidgets.QTreeWidget):
+    blueBG = QtGui.QBrush(QtGui.QColor(112, 124, 137))
+    redBG = QtGui.QBrush(QtGui.QColor(134, 119, 127))
+    yellowBG = QtGui.QBrush(QtGui.QColor(144, 144, 122))
+    regularBG = QtGui.QBrush(QtGui.QColor(130, 130, 130))
+
+    def getDeformerColor(self, driverName):
+        try:
+            for letter, col in [("L", self.redBG), ("R", self.blueBG), ("M", self.yellowBG)]:
+                if "_{0}_".format(letter) in driverName:
+                    return col
+            return self.regularBG
+        except:
+            return self.regularBG
+
     def __init__(self, *args):
         self.isOn = False
         super(InfluenceTree, self).__init__(*args)
@@ -1107,7 +1123,6 @@ class InfluenceTree(QtWidgets.QTreeWidget):
 
 
 class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
-
     isZeroDfm = False
     _colors = [
         (161, 105, 48),
@@ -1126,11 +1141,12 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
             col = cmds.displayRGBColor("userDefined{0}".format(i), q=True)
             self._colors.append([int(el * 255) for el in col])
 
-    def __init__(self, influence, index):
+    def __init__(self, influence, index, col):
         super(InfluenceTreeWidgetItem, self).__init__(["", influence])
         self._influence = influence
         self._index = index
-        self.regularBG = self.background(1)
+        self.regularBG = col  # self.background(1)
+        self.setBackground(1, self.regularBG)
         self.darkBG = QtGui.QBrush(QtGui.QColor(120, 120, 120))
         self.getColors()
         self.setDisplay()
