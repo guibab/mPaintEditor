@@ -720,6 +720,12 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.minColor_sb.valueChanged.connect(partial(self.brushFunctions.setBSDAttr, "minColor"))
         self.maxColor_sb.valueChanged.connect(partial(self.brushFunctions.setBSDAttr, "maxColor"))
 
+        self.soloColorIndex = (
+            cmds.optionVar(q="soloColor_SkinPaintWin")
+            if cmds.optionVar(exists="soloColor_SkinPaintWin")
+            else 0
+        )
+        self.soloColor_cb.setCurrentIndex(self.soloColorIndex)
         self.soloColor_cb.currentIndexChanged.connect(self.comboSoloColorChanged)
         # self.uiInfluenceTREE.itemSelectionChanged.connect(self.influenceSelChanged)
         self.uiInfluenceTREE.itemDoubleClicked.connect(self.influenceDoubleClicked)
