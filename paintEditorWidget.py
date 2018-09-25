@@ -85,9 +85,9 @@ QWidget {
     color:black;
     selection-background-color: #a0a0ff;
 }
-QCheckBox:hover
-{
-  background:rgb(120, 120, 120); 
+QWidget:disabled {
+    font:italic;
+    color:grey;
 }
 QMenu::item:disabled {
     color:grey;
@@ -113,40 +113,6 @@ QPushButton:pressed {
     color:white;
     border-style: inset;
 }
-QWidget:disabled {
-    font:italic;
-    color:grey;
-    }
-TableView {
-     selection-background-color: #a0a0ff;
-     background : #aba8a6;
-     color: black;
-     selection-color: black;
-     border : 0px;
- }
-QTableView QTableCornerButton::section {
-    background:  transparent;
-    border : 1px solid black;
-}
- 
-TableView::section {
-    background-color: #878787;
-    color: black;
-    border : 1px solid black;
-}
-QHeaderView::section {
-    background-color: #878787;
-    color: black;
-    border : 1px solid black;
-}
-VertHeaderView{
-    color: black;
-    border : 0px solid black;
-}
-HorizHeaderView{
-    color: black;
-    border : 0px solid black;
-}
 QGroupBox{
     background-color: #aba8a6;
     color : black;
@@ -157,10 +123,13 @@ QGroupBox::checked{
     color : black;
     border : 1px solid rgb(120, 120, 120); 
 }
-
 QGroupBox::indicator {
     width: 0px;
     height: 0px;
+}
+QCheckBox:hover
+{
+  background:rgb(120, 120, 120); 
 }
 QComboBox{
     border : 1px solid rgb(120, 120, 120); 
@@ -592,7 +561,24 @@ class SkinPaintWin(QtWidgets.QDialog):
         cmds.confirmDialog(m="removeInfluences")
 
     def removeUnusedInfluences(self):
-        cmds.confirmDialog(m="removeUnusedInfluences")
+        skn = self.dataOfSkin.theSkinCluster
+        if skn:
+            allInfluences = set(cmds.skinCluster(skn, query=True, influence=True))
+            weightedInfluences = set(cmds.skinCluster(skn, query=True, weightedInfluence=True))
+            zeroInfluences = list(allInfluences - weightedInfluences)
+            if zeroInfluences:
+                toRmvStr = "\n".join(zeroInfluences)
+                res = cmds.confirmDialog(
+                    m="removeUnusedInfluences :\n{0}".format(toRmvStr),
+                    button=["Yes", "No"],
+                    defaultButton="Yes",
+                    cancelButton="No",
+                    dismissString="No",
+                )
+                if res == "Yes":
+                    self.delete_btn.click()
+                    cmds.skinCluster(skn, e=True, removeInfluence=zeroInfluences)
+                    cmds.evalDeferred(self.refreshBtn)
 
     def randomColors(self):
         cmds.confirmDialog(m="randomColors")
