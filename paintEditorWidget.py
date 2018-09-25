@@ -10,6 +10,7 @@ from maya import cmds, mel, OpenMaya
 import blurdev
 import os
 import re
+import random
 import numpy as np
 from studio.gui.resource import Icons
 from mWeightEditor.tools.skinData import DataOfSkin
@@ -17,6 +18,34 @@ from mWeightEditor.tools.spinnerSlider import ValueSetting, ButtonWithValue, Ver
 from mWeightEditor.tools.utils import GlobalContext, toggleBlockSignals, deleteTheJobs
 from tools.brushFunctions import BrushFunctions
 from tools.catchEventsUI import CatchEventsWidget, rootWindow
+
+
+# To make your color choice reproducible, uncomment the following line:
+# random.seed(10)
+def get_random_color(pastel_factor=0.5):
+    return [
+        (x + pastel_factor) / (1.0 + pastel_factor)
+        for x in [random.uniform(0, 1.0) for i in [1, 2, 3]]
+    ]
+
+
+def color_distance(c1, c2):
+    return sum([abs(x[0] - x[1]) for x in zip(c1, c2)])
+
+
+def generate_new_color(existing_colors, pastel_factor=0.5):
+    max_distance = None
+    best_color = None
+    for i in range(0, 100):
+        color = get_random_color(pastel_factor=pastel_factor)
+        if not existing_colors:
+            return color
+        best_distance = min([color_distance(color, c) for c in existing_colors])
+        if not max_distance or best_distance > max_distance:
+            max_distance = best_distance
+            best_color = color
+    return best_color
+
 
 thePaintContextName = "BlurSkinartAttrContext"
 
@@ -637,7 +666,25 @@ class SkinPaintWin(QtWidgets.QDialog):
                     cmds.evalDeferred(self.selectRefresh)
 
     def randomColors(self):
-        cmds.confirmDialog(m="randomColors")
+        golden_ratio_conjugate = 0.618033988749895
+        s, v = 0.5, 0.95
+        colors = []
+        for itemIndex in range(self.uiInfluenceTREE.topLevelItemCount()):
+            item = self.uiInfluenceTREE.topLevelItem(itemIndex)
+            nm = item._influence
+            ind = item._index
+            """
+            h = ( random.random() + golden_ratio_conjugate ) %1
+            theCol = QtGui.QColor.fromHsvF (h,s,v)
+            values = [theCol.redF(), theCol.greenF(), theCol.blueF()]
+            """
+            values = generate_new_color(colors, pastel_factor=0.3)
+            colors.append(values)
+
+            # print ind,nm, values
+            self.brushFunctions.setColor(ind, values)
+            item.setColor(values)
+        # cmds.confirmDialog (m="randomColors")
 
     def createWindow(self):
         self.unLock = True
