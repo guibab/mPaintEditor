@@ -470,6 +470,7 @@ class SkinPaintWin(QtWidgets.QDialog):
             cmds.optionVar(intValueAppend=("SkinPaintWindow", el))
         cmds.optionVar(intValueAppend=("SkinPaintWindow", self.commandIndex))
         self.storePrevCommandValue()
+
         # self.headerView.deleteLater()
         if self.EVENTCATCHER != None:
             self.EVENTCATCHER.close()
@@ -801,6 +802,14 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.removeInfluences_btn.clicked.connect(self.removeInfluences)
         self.removeUnusedInfluences_btn.clicked.connect(self.removeUnusedInfluences)
         self.randomColors_btn.clicked.connect(self.randomColors)
+
+        if cmds.optionVar(exists="mirrorOptions"):
+            leftText, rightText = cmds.optionVar(q="mirrorOptions")
+            self.uiLeftNamesLE.setText(leftText)
+            self.uiRightNamesLE.setText(rightText)
+        self.uiLeftNamesLE.editingFinished.connect(self.storeMirrorOptions)
+        self.uiRightNamesLE.editingFinished.connect(self.storeMirrorOptions)
+
         for btn, icon in [
             ("addInfluences", "plus"),
             ("removeInfluences", "minus"),
@@ -831,7 +840,7 @@ class SkinPaintWin(QtWidgets.QDialog):
 
         for nm in ["lock", "refresh", "pinSelection"]:
             self.__dict__[nm + "_btn"].setText("")
-        for btnName in ["pickVertex_btn", "pickInfluence_btn"]:
+        for btnName in ["pickVertex_btn", "pickInfluence_btn", "mirrorStore_btn"]:
             self.__dict__[btnName].setEnabled(False)
         self.valueSetter = ValueSettingPE(self, precision=2)
         self.valueSetter.setAddMode(False, autoReset=False)
@@ -853,7 +862,19 @@ class SkinPaintWin(QtWidgets.QDialog):
         dialogLayout.insertLayout(1, Hlayout2)
         dialogLayout.insertSpacing(1, 10)
 
+    def storeMirrorOptions(self):
+        cmds.optionVar(clearArray="mirrorOptions")
+        cmds.optionVar(stringValueAppend=("mirrorOptions", self.uiLeftNamesLE.text()))
+        cmds.optionVar(stringValueAppend=("mirrorOptions", self.uiRightNamesLE.text()))
+
     def getMirrorInfluenceArray(self):
+        from mrigtools.tools import mirrorFn
+
+        msh = cmds.listRelatives(self.dataOfSkin.deformedShape, path=True, parent=True)[0]
+        if not cmds.attributeQuery("symmetricVertices", node=msh, exists=True):
+            selectionShapes = mirrorFn.getShapesSelected(intermediateObject=True)
+            _symData = mirrorFn.SymData()
+            _symData.computeSymetry(selectionShapes[-1])
         leftInfluence = self.uiLeftNamesLE.text()
         rightInfluence = self.uiRightNamesLE.text()
         driverNames_oppIndices = self.dataOfSkin.getArrayOppInfluences(
@@ -1132,7 +1153,7 @@ class SkinPaintWin(QtWidgets.QDialog):
 
     def paintEnd(self):
         self.EVENTCATCHER.fermer()  # removeFilters ()
-        for btnName in ["pickVertex_btn", "pickInfluence_btn"]:
+        for btnName in ["pickVertex_btn", "pickInfluence_btn", "mirrorStore_btn"]:
             self.__dict__[btnName].setEnabled(False)
         self.setStyleSheet(styleSheet)
         self.changeMultiSolo(-1)
@@ -1149,7 +1170,7 @@ class SkinPaintWin(QtWidgets.QDialog):
             )
             self.transferValues()
         self.EVENTCATCHER.open()
-        for btnName in ["pickVertex_btn", "pickInfluence_btn"]:
+        for btnName in ["pickVertex_btn", "pickInfluence_btn", "mirrorStore_btn"]:
             self.__dict__[btnName].setEnabled(True)
         self.setStyleSheet(styleSheet + "SkinPaintWin {border : 2px solid red}")
         self.changeMultiSolo(self.multi_rb.isChecked())
