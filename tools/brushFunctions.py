@@ -122,6 +122,12 @@ class BrushFunctions:
             cmds.setAttr(self.bsd + ".smoothRepeat", repeatVal)
             cmds.setAttr(self.bsd + ".smoothDepth", depthVal)
 
+    def setMirrorInfluences(self, driverNames_oppIndices):
+        if cmds.objExists(self.bsd):
+            cmds.setAttr(
+                self.bsd + ".mirrorInfluenceArray", driverNames_oppIndices, type="Int32Array"
+            )
+
     def callUndo(self):
         if cmds.objExists(self.bsd):
             cmds.setAttr(self.bsd + ".callUndo", True)
