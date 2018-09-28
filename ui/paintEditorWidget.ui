@@ -470,28 +470,6 @@ p, li { white-space: pre-wrap; }
          <bool>true</bool>
         </property>
        </widget>
-       <widget class="QCheckBox" name="autoExpand_cb">
-        <property name="geometry">
-         <rect>
-          <x>110</x>
-          <y>26</y>
-          <width>97</width>
-          <height>13</height>
-         </rect>
-        </property>
-        <property name="layoutDirection">
-         <enum>Qt::RightToLeft</enum>
-        </property>
-        <property name="text">
-         <string> autoExpand</string>
-        </property>
-        <property name="checked">
-         <bool>false</bool>
-        </property>
-        <property name="autoExclusive">
-         <bool>false</bool>
-        </property>
-       </widget>
        <widget class="QWidget" name="widget" native="true">
         <property name="geometry">
          <rect>
@@ -532,6 +510,28 @@ p, li { white-space: pre-wrap; }
           </widget>
          </item>
         </layout>
+       </widget>
+       <widget class="QCheckBox" name="mirrorActive_cb">
+        <property name="geometry">
+         <rect>
+          <x>116</x>
+          <y>23</y>
+          <width>91</width>
+          <height>20</height>
+         </rect>
+        </property>
+        <property name="layoutDirection">
+         <enum>Qt::RightToLeft</enum>
+        </property>
+        <property name="text">
+         <string>mirror active</string>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+        <property name="autoExclusive">
+         <bool>false</bool>
+        </property>
        </widget>
       </widget>
      </item>
@@ -1040,7 +1040,7 @@ p, li { white-space: pre-wrap; }
        <string>search replace for influences :</string>
       </property>
      </widget>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
         <x>14</x>
@@ -1066,7 +1066,7 @@ p, li { white-space: pre-wrap; }
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
         <x>14</x>
@@ -1077,19 +1077,12 @@ p, li { white-space: pre-wrap; }
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_8">
        <item>
-        <widget class="QPushButton" name="mirrorStore_btn">
-         <property name="text">
-          <string>store</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="mirrorActive_cb">
+        <widget class="QCheckBox" name="autoExpand_cb">
          <property name="layoutDirection">
-          <enum>Qt::RightToLeft</enum>
+          <enum>Qt::LeftToRight</enum>
          </property>
          <property name="text">
-          <string>mirror active</string>
+          <string>post set  autoExpand</string>
          </property>
          <property name="checked">
           <bool>false</bool>

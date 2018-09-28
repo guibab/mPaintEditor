@@ -715,6 +715,10 @@ class CatchEventsWidget(QtWidgets.QWidget):
 
                 event.ignore()
                 return True
+            if event.key() == QtCore.Qt.Key_M and altPressed:
+                self.mainWindow.mirrorActive_cb.toggle()
+                event.ignore()
+                return True
             if event.key() == QtCore.Qt.Key_D:
                 if self.verbose:
                     if altPressed:
