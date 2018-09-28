@@ -938,7 +938,7 @@ class SkinPaintWin(QtWidgets.QDialog):
         leftInfluence = self.uiLeftNamesLE.text()
         rightInfluence = self.uiRightNamesLE.text()
         driverNames_oppIndices = self.dataOfSkin.getArrayOppInfluences(
-            leftInfluence=leftInfluence, rightInfluence=rightInfluence
+            leftInfluence=leftInfluence, rightInfluence=rightInfluence, useRealIndices=True
         )
         if not driverNames_oppIndices:
             return
