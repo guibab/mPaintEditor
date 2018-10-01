@@ -652,30 +652,34 @@ class CatchEventsWidget(QtWidgets.QWidget):
             elif event.key() == QtCore.Qt.Key_Control and not (
                 self.CtrlOrShiftPressed or self.CtrlOrShiftPaint
             ):
-                if self.verbose:
-                    print "custom CONTROL pressed"
-                event.ignore()
-                self.CtrlOrShiftPressed = True
-                self.CtrlOrShiftPaint = False
-                self.prevButton = self.mainWindow.getEnabledButton()
-                if self.prevButton == self.mainWindow.add_btn:
-                    self.mainWindow.rmv_btn.setChecked(True)
-                    self.mainWindow.brushFunctions.setPaintMode(1)  # remove
-                elif self.prevButton == self.mainWindow.locks_btn:
-                    self.mainWindow.brushFunctions.setPaintMode(7)  # remove
-                # self.mainWindow.rmv_btn.click()
-                return True
+                if QApplication.mouseButtons() == QtCore.Qt.NoButton:
+                    if self.verbose:
+                        print "custom CONTROL pressed"
+                    event.ignore()
+                    self.CtrlOrShiftPressed = True
+                    self.CtrlOrShiftPaint = False
+                    self.prevButton = self.mainWindow.getEnabledButton()
+                    if self.prevButton == self.mainWindow.add_btn:
+                        self.mainWindow.rmv_btn.setChecked(True)
+                        self.mainWindow.brushFunctions.setPaintMode(1)  # remove
+                    elif self.prevButton == self.mainWindow.locks_btn:
+                        self.mainWindow.brushFunctions.setPaintMode(7)  # remove
+                        self.mainWindow.locks_btn.setText("UNLOCK")
+                    # self.mainWindow.rmv_btn.click()
+                    return True
             elif event.key() == QtCore.Qt.Key_Shift and not (
                 self.CtrlOrShiftPressed or self.CtrlOrShiftPaint
             ):
-                if self.verbose:
-                    print "custom SHIFT pressed"
-                event.ignore()
-                self.CtrlOrShiftPressed = True
-                self.CtrlOrShiftPaint = False
-                self.prevButton = self.mainWindow.getEnabledButton()
-                self.mainWindow.smooth_btn.click()
-                return True
+                if QApplication.mouseButtons() == QtCore.Qt.NoButton:
+
+                    if self.verbose:
+                        print "custom SHIFT pressed"
+                    event.ignore()
+                    self.CtrlOrShiftPressed = True
+                    self.CtrlOrShiftPaint = False
+                    self.prevButton = self.mainWindow.getEnabledButton()
+                    self.mainWindow.smooth_btn.click()
+                    return True
             elif event.key() == QtCore.Qt.Key_N:
                 self.NPressed = True
             elif event.key() == QtCore.Qt.Key_Escape:
