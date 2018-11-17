@@ -16,6 +16,5 @@ if ( __name__ in ( '__main__', '__builtin__' ) ):
 	
 	# depending on our environment, Python initializes the script differently for scope, so try both methods:
 	# importing from a sub-module
-	from mPaintEditor.paintEditorWidget import SkinPaintWin
-	
+	from mPaintEditor.paintEditorWidget import SkinPaintWin	
 	blurdev.launch( SkinPaintWin, instance=True )

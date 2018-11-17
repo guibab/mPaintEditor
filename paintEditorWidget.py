@@ -8,6 +8,7 @@ from Qt import QtGui, QtCore, QtWidgets
 from functools import partial
 from maya import cmds, mel, OpenMaya
 import blurdev
+from blurdev.gui import Window
 import os
 import re
 import random
@@ -221,7 +222,7 @@ class HelpWidget(QtWidgets.QTreeWidget):
 #   the window
 #
 ###################################################################################
-class SkinPaintWin(QtWidgets.QDialog):
+class SkinPaintWin(Window):
     """
     A simple test widget to contain and own the model and table.
     """
@@ -260,7 +261,7 @@ class SkinPaintWin(QtWidgets.QDialog):
         self.setStyleSheet(styleSheet)
         self.setWindowDisplay()
 
-        self.addCallBacks()
+        # self.addCallBacks ()
         self.buildRCMenu()
         self.createColorPicker()
         self.uiInfluenceTREE.clear()
@@ -272,6 +273,10 @@ class SkinPaintWin(QtWidgets.QDialog):
             self.EVENTCATCHER = CatchEventsWidget(
                 connectedWindow=self, thePaintContextName=thePaintContextName
             )
+
+    def showEvent(self, event):
+        super(SkinPaintWin, self).showEvent(event)
+        self.addCallBacks()
 
     def colorSelected(self, color):
         values = [color.red() / 255.0, color.green() / 255.0, color.blue() / 255.0]
@@ -741,7 +746,7 @@ class SkinPaintWin(QtWidgets.QDialog):
     def createWindow(self):
         self.unLock = True
         self.unPin = True
-        dialogLayout = self.layout()
+        dialogLayout = self.mainLayout  # self.layout()
 
         # changing the treeWidghet
         for ind in range(dialogLayout.count()):
