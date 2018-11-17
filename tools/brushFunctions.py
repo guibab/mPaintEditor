@@ -86,7 +86,6 @@ class BrushFunctions:
         # 0 Add - 1 Remove - 2 AddPercent - 3 Absolute - 4 Smooth - 5 Sharpen - 6 Colors
         if mode < 0:
             mode = 0
-
         if cmds.objExists(self.bsd):
             cmds.setAttr(self.bsd + ".command", mode)
 
