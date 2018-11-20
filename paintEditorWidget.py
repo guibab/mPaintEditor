@@ -1202,7 +1202,15 @@ class SkinPaintWin(Window):
 
     def refreshColorsAndLocks(self):
         for i in range(self.uiInfluenceTREE.topLevelItemCount()):
-            self.uiInfluenceTREE.topLevelItem(i).setDisplay()
+            item = self.uiInfluenceTREE.topLevelItem(i)
+            item.setDisplay()
+            if item.currentColor != item.color():
+                # we need a real update :
+                ind = item._index
+                item.currentColor = item.color()
+                self.brushFunctions.setColor(ind, item.currentColor)
+                print ind, item._influence
+        self.brushFunctions.setBSDAttr("getLockWeights", True)
 
     def refreshCallBack(self):
         currContext = cmds.currentCtx()
@@ -1337,6 +1345,11 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         self._index = index
         self._skinCluster = skinCluster
         self.regularBG = col  # self.background(1)
+
+        self.currentColor = [
+            255.0 * el for el in cmds.getAttr(self._influence + ".wireColorRGB")[0]
+        ]
+
         self.setBackground(1, self.regularBG)
         self.darkBG = QtGui.QBrush(QtGui.QColor(120, 120, 120))
         self.getColors()
@@ -1369,6 +1382,7 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
     """
 
     def setColor(self, col):
+        self.currentColor = col
         cmds.setAttr(self._influence + ".wireColorRGB", *col)
         self.setIcon(0, self.colorIcon())
 
