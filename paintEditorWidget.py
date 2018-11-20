@@ -1209,7 +1209,7 @@ class SkinPaintWin(Window):
                 ind = item._index
                 item.currentColor = item.color()
                 self.brushFunctions.setColor(ind, item.currentColor)
-                print ind, item._influence
+                # print ind, item._influence
         self.brushFunctions.setBSDAttr("getLockWeights", True)
 
     def refreshCallBack(self):
