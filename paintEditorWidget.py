@@ -51,7 +51,8 @@ def generate_new_color(existing_colors, pastel_factor=0.5):
 thePaintContextName = "BlurSkinartAttrContext"
 
 
-def deleteNodesOnSave():
+def deleteNodesOnSave(*args, **kwargs):
+    print "delete blurSkinDisplay Nodes On Save "
     nodeToDelete = cmds.ls(type="blurSkinDisplay")
     if nodeToDelete:
         cmds.delete(nodeToDelete)
