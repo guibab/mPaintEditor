@@ -190,9 +190,20 @@ class BrushFunctions:
             "toolOnProc": 'python ("BLURpaintSkinOnProc()");',
             "toolOffProc": 'python ("BLURpaintSkinOffProc()");',
         }
-
         cmds.artAttrCtx(self.thePaintContextName, edit=True, **paintArgs)
         cmds.setToolTo(self.thePaintContextName)
+
+        # cmds.evalDeferred (self.forceEnterPaintAgain)
+
+    def forceEnterPaintAgain(self):
+        print "- forceEnterPaintAgain -"
+        cmds.setToolTo(self.thePaintContextName)
+        mel.eval(
+            'artSetToolAndSelectAttr( "{1}", "{0}.paintAttr" );'.format(
+                self.bsd, self.thePaintContextName
+            )
+        )
+        # print 'artSetToolAndSelectAttr( "{1}", "{0}.{0}.paintAttr" );'.format (self.bsd, self.thePaintContextName)
 
     def createScriptJob(self):
         deleteTheJobs(toSearch="BrushFunctions.callAfterPaint")
