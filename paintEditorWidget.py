@@ -190,6 +190,11 @@ class HelpWidget(QtWidgets.QTreeWidget):
         self.resizeColumnToContents(1)
         self.resize(250, nb * 15)
 
+        self.closeBtn = QtWidgets.QPushButton("X", self)
+        self.closeBtn.resize(20, 20)
+        self.closeBtn.move(225, 5)
+        self.closeBtn.clicked.connect(self.close)
+
     def close(self):
         self.mainWindow.setEnabled(True)
         super(HelpWidget, self).close()
@@ -215,8 +220,8 @@ class HelpWidget(QtWidgets.QTreeWidget):
             self.addTopLevelItem(helpItem)
         return len(lstShortCuts)
 
-    def mousePressEvent(self, *args):
-        self.close()
+    # def mousePressEvent (self, *args):
+    #    self.close()
 
 
 ###################################################################################

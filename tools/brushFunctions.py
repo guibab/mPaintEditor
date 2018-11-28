@@ -139,14 +139,33 @@ class BrushFunctions:
         if cmds.objExists(self.bsd):
             cmds.setAttr(self.bsd + ".callUndo", True)
 
+    restorePanels = []
+
+    def setPanelsDisplayOn(self):
+        self.restorePanels = []
+        for panel in cmds.getPanel(vis=True):
+            if cmds.getPanel(to=panel) == "modelPanel":
+                displayLights = cmds.modelEditor(panel, query=True, displayLights=True)
+                cmEnabled = cmds.modelEditor(panel, query=True, cmEnabled=True)
+                self.restorePanels.append((panel, displayLights, cmEnabled))
+                cmds.modelEditor(panel, edit=True, displayLights="flat")
+                # GAMMA ENABLED
+                cmds.modelEditor(panel, e=True, cmEnabled=False)
+
+    def setPanelsDisplayOff(self):
+        for panel, displayLights, cmEnabled in self.restorePanels:
+            cmds.modelEditor(panel, edit=True, displayLights=displayLights, cmEnabled=cmEnabled)
+
     def paintSkinOnProc(self):
         # print "--- entering blur skin Paint -----"
         self.createScriptJob()
         self.mainWindow.paintStart()
+        self.setPanelsDisplayOn()
 
     def paintSkinOffProc(self):
         # print "--- exiting blur skin Paint -----"
         self.mainWindow.paintEnd()
+        self.setPanelsDisplayOff()
 
     def enterPaint(self):
         self.callAfterPaint()
