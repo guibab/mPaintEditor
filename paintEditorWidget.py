@@ -2,7 +2,7 @@
 import __main__
 self = __main__.paintEditor
 """
-from Qt import QtGui, QtCore, QtWidgets
+from Qt import QtGui, QtCore, QtWidgets, QtCompat
 
 # import shiboken2 as shiboken
 from functools import partial
@@ -300,7 +300,10 @@ class SkinPaintWin(Window):
     def refreshWeightEditor(self, getLocks=True):
         import __main__
 
-        if "weightEditor" in __main__.__dict__ and __main__.weightEditor.isVisible():
+        if (
+            hasattr(__main__, "weightEditor")
+            and __main__.weightEditor in QtWidgets.QApplication.instance().topLevelWidgets()
+        ):
             if getLocks:
                 __main__.weightEditor.dataOfSkin.getLocksInfo()
             __main__.weightEditor._tv.repaint()
