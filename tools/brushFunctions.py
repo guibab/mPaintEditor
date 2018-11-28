@@ -185,6 +185,11 @@ class BrushFunctions:
         if prt not in sel:
             cmds.select(prt)
         mel.eval(
+            'artSetToolAndSelectAttr( "artAttrCtx", "blurSkinDisplay.{}.paintAttr" );'.format(
+                self.bsd
+            )
+        )
+        mel.eval(
             'artSetToolAndSelectAttr( "{1}", "{0}.paintAttr" );'.format(
                 self.bsd, self.thePaintContextName
             )
@@ -211,18 +216,6 @@ class BrushFunctions:
         }
         cmds.artAttrCtx(self.thePaintContextName, edit=True, **paintArgs)
         cmds.setToolTo(self.thePaintContextName)
-
-        # cmds.evalDeferred (self.forceEnterPaintAgain)
-
-    def forceEnterPaintAgain(self):
-        print "- forceEnterPaintAgain -"
-        cmds.setToolTo(self.thePaintContextName)
-        mel.eval(
-            'artSetToolAndSelectAttr( "{1}", "{0}.paintAttr" );'.format(
-                self.bsd, self.thePaintContextName
-            )
-        )
-        # print 'artSetToolAndSelectAttr( "{1}", "{0}.{0}.paintAttr" );'.format (self.bsd, self.thePaintContextName)
 
     def createScriptJob(self):
         deleteTheJobs(toSearch="BrushFunctions.callAfterPaint")
