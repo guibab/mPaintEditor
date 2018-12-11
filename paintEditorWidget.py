@@ -16,7 +16,13 @@ import numpy as np
 from studio.gui.resource import Icons
 from mWeightEditor.tools.skinData import DataOfSkin
 from mWeightEditor.tools.spinnerSlider import ValueSetting, ButtonWithValue, VerticalBtn
-from mWeightEditor.tools.utils import GlobalContext, toggleBlockSignals, deleteTheJobs
+from mWeightEditor.tools.utils import (
+    GlobalContext,
+    toggleBlockSignals,
+    deleteTheJobs,
+    addNameChangedCallback,
+    removeNameChangedCallback,
+)
 from tools.brushFunctions import BrushFunctions
 from tools.catchEventsUI import CatchEventsWidget, rootWindow
 
@@ -75,10 +81,10 @@ def getIcon(iconNm):
 
 
 _icons = {
-    "lock": Icons.getIcon(r"icons8\Android_L\PNG\48\Very_Basic\lock-48"),
-    "unlock": Icons.getIcon(r"icons8\Android_L\PNG\48\Very_Basic\unlock-48"),
-    "del": Icons.getIcon(r"icons8\office\PNG\16\Editing\delete_sign-16"),
-    "fromScene": Icons.getIcon(r"arrow-045"),
+    "lock": getIcon("lock-48"),
+    "unlock": getIcon("unlock-48"),
+    "del": getIcon("delete_sign-16"),
+    "fromScene": Icons.getIcon("arrow-045"),
     "pinOn": getIcon("pinOn"),
     "pinOff": getIcon("pinOff"),
     "gaussian": getIcon("circleGauss"),
@@ -435,7 +441,18 @@ class SkinPaintWin(Window):
                 thebtn = self.__dict__[self.commandArray[vals[4]] + "_btn"]
                 thebtn.setChecked(True)
 
+    def renameCB(self, oldName, newName):
+        if self.dataOfSkin:
+            lst = self.dataOfSkin.driverNames + [
+                self.dataOfSkin.theSkinCluster,
+                self.dataOfSkin.deformedShape,
+            ]
+            self.dataOfSkin.renameCB(oldName, newName)
+            if oldName in lst:
+                self.refresh(force=False, renamedCalled=True)
+
     def addCallBacks(self):
+        self.renameCallBack = addNameChangedCallback(self.renameCB)
         self.refreshSJ = cmds.scriptJob(event=["SelectionChanged", self.refreshCallBack])
         # create callBack to end
         import __main__
@@ -452,6 +469,7 @@ class SkinPaintWin(Window):
         """
 
     def deleteCallBacks(self):
+        removeNameChangedCallback(self.renameCallBack)
         deleteTheJobs("BrushFunctions.callAfterPaint")
         deleteTheJobs("SkinPaintWin.refreshCallBack")
         deleteTheJobs("SkinPaintWin.updateMirrorCB")
@@ -1239,13 +1257,13 @@ class SkinPaintWin(Window):
         ):  # dont refresh for paint
             self.refresh()
 
-    def refresh(self, force=False):
+    def refresh(self, force=False, renamedCalled=False):
         # print "refresh CALLED"
         with GlobalContext(message="paintEditor getAllData", doPrint=False):
             resultData = self.dataOfSkin.getAllData(
                 displayLocator=False, getskinWeights=True, force=force
             )
-        if resultData:
+        if renamedCalled or resultData:
             # print "- refreshing -"
             self.brushFunctions.setColorsOnJoints()
             self.brushFunctions.bsd = self.dataOfSkin.getConnectedBlurskinDisplay()
