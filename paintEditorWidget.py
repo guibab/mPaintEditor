@@ -931,6 +931,7 @@ class SkinPaintWin(Window):
             # "gaussian", "poly", "solid" and "square"
 
             thebtn.setIcon(_icons[nm])
+        self.flood_btn.clicked.connect(self.brushFunctions.flood)
         self.smooth_btn.toggled.connect(self.updateOptionEnable)
         self.sharpen_btn.toggled.connect(self.updateOptionEnable)
         self.updateOptionEnable(True)
@@ -955,7 +956,7 @@ class SkinPaintWin(Window):
         Hlayout2.setSpacing(0)
         Hlayout2.addWidget(self.widgetAbs)
 
-        dialogLayout.insertSpacing(1, 10)
+        dialogLayout.insertSpacing(2, 10)
         dialogLayout.insertLayout(1, Hlayout)
         dialogLayout.insertLayout(1, Hlayout2)
         dialogLayout.insertSpacing(1, 10)

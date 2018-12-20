@@ -92,6 +92,9 @@ class BrushFunctions:
     def setStampProfile(self, profile):
         cmds.artAttrCtx(self.thePaintContextName, edit=True, stampProfile=profile)
 
+    def flood(self):
+        cmds.artAttrCtx(self.thePaintContextName, edit=True, clear=True)
+
     def togglePostSetting(self, val):
         if cmds.objExists(self.bsd):
             cmds.setAttr(self.bsd + ".postSetting", val)
