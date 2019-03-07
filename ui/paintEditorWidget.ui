@@ -648,6 +648,13 @@ p, li { white-space: pre-wrap; }
      </layout>
     </item>
     <item>
+     <widget class="QCheckBox" name="newBrush_cb">
+      <property name="text">
+       <string>NEW  BRUSH</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QWidget" name="widget_paintBtns" native="true">
       <layout class="QHBoxLayout" name="horizontalLayout_5">
        <property name="spacing">

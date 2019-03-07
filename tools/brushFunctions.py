@@ -13,10 +13,14 @@ class BrushFunctions:
         self.thePaintContextName = thePaintContextName
         self.mainWindow = mainWindow
         self.bsd = ""
+
         mel.eval("source artAttrCreateMenuItems.mel")
         if not cmds.pluginInfo("blurSkin", query=True, loaded=True):
             cmds.loadPlugin("blurSkin")
-        cmds.makePaintable("blurSkinDisplay", "paintAttr")
+        if not cmds.pluginInfo("brSkinBrush", query=True, loaded=True):
+            cmds.loadPlugin("brSkinBrush")
+        # cmds.makePaintable( "blurSkinDisplay", "paintAttr")
+
         import __main__
 
         __main__.BLURpaintSkinOnProc = self.paintSkinOnProc
@@ -170,7 +174,7 @@ class BrushFunctions:
         self.mainWindow.paintEnd()
         self.setPanelsDisplayOff()
 
-    def enterPaint(self):
+    def enterPaint(self, newBrush=False):
         self.callAfterPaint()
 
         nbAtt = cmds.getAttr(self.bsd + ".wl", size=True)
@@ -187,38 +191,50 @@ class BrushFunctions:
         sel = cmds.ls(sl=True)
         if prt not in sel:
             cmds.select(prt)
-        mel.eval(
-            'artSetToolAndSelectAttr( "artAttrCtx", "blurSkinDisplay.{}.paintAttr" );'.format(
-                self.bsd
-            )
-        )
-        mel.eval(
-            'artSetToolAndSelectAttr( "{1}", "{0}.paintAttr" );'.format(
-                self.bsd, self.thePaintContextName
-            )
-        )
-        # cmds.ArtPaintAttrTool ()
 
-        # fcProc = createMelProcedure(self.finalPaintBrush, [('int','slot')])
-        # import __main__
-        # __main__.applyCallBack = True
-        fileVar = os.path.realpath(__file__)
-        uiFolder, filename = os.path.split(fileVar)
-        iconPth = os.path.join(uiFolder[:-6], "img", "icon.png")
-        # print iconPth
+        if newBrush:
+            # ---------- homeMade Brush  ---------------------
+            mel.eval("brSkinBrushToolCtx")
 
-        paintArgs = {
-            "outline": True,
-            "colorfeedback": False,
-            "clamp": "both",
-            "clamplower": 0.0,
-            "clampupper": 1.0,
-            "image1": iconPth,
-            "toolOnProc": 'python ("BLURpaintSkinOnProc()");',
-            "toolOffProc": 'python ("BLURpaintSkinOffProc()");',
-        }
-        cmds.artAttrCtx(self.thePaintContextName, edit=True, **paintArgs)
-        cmds.setToolTo(self.thePaintContextName)
+            self.paintSkinOnProc()
+            cmds.evalDeferred(partial(cmds.setAttr, self.bsd + ".clearArray", 1))
+            # reconnect :
+            outConn = cmds.listConnections(self.bsd + ".wl", s=False, d=True)
+            if not outConn:
+                print "RECONNECT WEIGHTLIST newBrush"
+                outMeshConn = cmds.listConnections(
+                    self.bsd + ".outMesh", s=False, d=True, type="skinCluster"
+                )
+                cmds.connectAttr(self.bsd + ".weightList", outMeshConn[0] + ".weightList", f=True)
+        else:
+            mel.eval(
+                'artSetToolAndSelectAttr( "artAttrCtx", "blurSkinDisplay.{}.paintAttr" );'.format(
+                    self.bsd
+                )
+            )
+            mel.eval(
+                'artSetToolAndSelectAttr( "{1}", "{0}.paintAttr" );'.format(
+                    self.bsd, self.thePaintContextName
+                )
+            )
+
+            fileVar = os.path.realpath(__file__)
+            uiFolder, filename = os.path.split(fileVar)
+            iconPth = os.path.join(uiFolder[:-6], "img", "icon.png")
+            # print iconPth
+
+            paintArgs = {
+                "outline": True,
+                "colorfeedback": False,
+                "clamp": "both",
+                "clamplower": 0.0,
+                "clampupper": 1.0,
+                "image1": iconPth,
+                "toolOnProc": 'python ("BLURpaintSkinOnProc()");',
+                "toolOffProc": 'python ("BLURpaintSkinOffProc()");',
+            }
+            cmds.artAttrCtx(self.thePaintContextName, edit=True, **paintArgs)
+            cmds.setToolTo(self.thePaintContextName)
 
     def createScriptJob(self):
         deleteTheJobs(toSearch="BrushFunctions.callAfterPaint")
