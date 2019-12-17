@@ -74,18 +74,18 @@ def callMarkingMenu():
 def rootWindow():
     """
     Returns the currently active QT main window
-    Only works for QT UI's like Maya
+    Only works for QT UIs like Maya
     """
     # for MFC apps there should be no root window
     window = None
     if QApplication.instance():
         inst = QApplication.instance()
         window = inst.activeWindow()
-        # Ignore QSplashScreen's, they should never be considered the root window.
+        # Ignore QSplashScreen s, they should never be considered the root window.
         if isinstance(window, QSplashScreen):
             return None
         # If the application does not have focus try to find A top level widget
-        # that doesn't have a parent and is a QMainWindow or QDialog
+        # that doesn t have a parent and is a QMainWindow or QDialog
         if window == None:
             windows = []
             dialogs = []
@@ -510,7 +510,7 @@ class CatchEventsWidget(QtWidgets.QWidget):
             """
             if event.modifiers() == QtCore.Qt.NoModifier:  # regular click
                 if event.type() == QtCore.QEvent.MouseButtonPress:  # click
-                    if self.displayLabel:  # let's close the label
+                    if self.displayLabel:  # let s close the label
                         self.mainWindow.selectPickedInfluence()
                         self.deleteDisplayLabel()
                         event.ignore()
