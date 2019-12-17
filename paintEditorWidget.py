@@ -611,15 +611,18 @@ class SkinPaintWin(Window):
         for btn in [self.repeatBTN, self.depthBTN]:
             btn.setEnabled(setOn)
 
+    def upateSoloModeRBs(self, val):
+        if val:
+            self.solo_rb.setChecked(True)
+        else:
+            self.multi_rb.setChecked(True)
+
+    def updateStrengthVal(self, value):
+        self.valueSetter.setVal(value * 100.0)
+        self.valueSetter.theProgress.setValue(value * 100.0)
+
     def changeMultiSolo(self, val):
-        res = cmds.polyColorSet(query=True, allColorSets=True) or []
-        if val == -1 and "noColorsSet" in res:
-            cmds.polyColorSet(currentColorSet=True, colorSet="noColorsSet")
-        elif "multiColorsSet" in res and "soloColorsSet" in res:
-            if val:
-                cmds.polyColorSet(currentColorSet=True, colorSet="multiColorsSet")
-            else:
-                cmds.polyColorSet(currentColorSet=True, colorSet="soloColorsSet")
+        print "swap MultiSold"
 
     def addInfluences(self):
         sel = cmds.ls(sl=True, tr=True)

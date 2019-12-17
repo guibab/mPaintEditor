@@ -7,7 +7,10 @@ except:
     import shiboken2 as QtCompat
     from PySide2.QtWidgets import QApplication, QSplashScreen, QDialog, QMainWindow
 from maya import OpenMayaUI, cmds, mel
-import brSkinBrush_pythonFunctions
+
+import brushPythonFunctions
+
+reload(brushPythonFunctions)
 
 """
 import catchEventsUI
@@ -320,7 +323,7 @@ class CatchEventsWidget(QtWidgets.QWidget):
                     return super(CatchEventsWidget, self).eventFilter(obj, event)
             elif event.key() == QtCore.Qt.Key_Escape:
                 # print "CLOSING"
-                brSkinBrush_pythonFunctions.escapePressed()
+                brushPythonFunctions.escapePressed()
                 event.ignore()
                 # self.close ()
                 mel.eval("setToolTo $gMove;")
@@ -431,7 +434,7 @@ class CatchEventsWidget(QtWidgets.QWidget):
                     return True
                 if event.key() == QtCore.Qt.Key_S:
                     # print "toggle soloMode"
-                    brSkinBrush_pythonFunctions.toggleSoloMode()
+                    brushPythonFunctions.toggleSoloMode()
                     event.ignore()
                     return True
                 if event.key() == QtCore.Qt.Key_M:

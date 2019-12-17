@@ -378,10 +378,11 @@ def setSoloMode(soloColor):
 
 
 def toggleSoloMode():
-    print "brSkinBrush_pythonFunctions  toggleSoloMode "
+    # print "brSkinBrush_pythonFunctions  toggleSoloMode "
     ctx = cmds.currentCtx()
     soloColor = cmds.brSkinBrushContext(ctx, q=True, soloColor=True)
     setSoloMode(not soloColor)
+    callPaintEditorFunction("upateSoloModeRBs", not soloColor)
 
 
 def fixOptionVarContext():
@@ -408,6 +409,13 @@ def getPaintEditor():
     if hasattr(__main__, "paintEditor"):
         return __main__.paintEditor
     return None
+
+
+def callPaintEditorFunction(function, *args, **kwargs):
+    paintEditor = getPaintEditor()
+    if paintEditor and hasattr(paintEditor, function):
+        fn = getattr(paintEditor, function)
+        fn(*args, **kwargs)
 
 
 def headsUpMessage(offsetX, offsetY, message, valueDisplay, precision):
@@ -441,10 +449,7 @@ def updateDisplayStrengthOrSize(sizeAdjust, value):
     if cmds.floatSliderGrp(fsg, q=True, ex=True):
         cmds.floatSliderGrp(fsg, e=True, value=value)
     if not sizeAdjust:
-        paintEditor = getPaintEditor()
-        if paintEditor:
-            paintEditor.valueSetter.setVal(value * 100.0)
-            paintEditor.valueSetter.theProgress.setValue(value * 100.0)
+        callPaintEditorFunction("updateStrengthVal", value)
 
 
 """
