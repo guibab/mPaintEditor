@@ -22,53 +22,31 @@ from mWeightEditor.tools.utils import (
     deleteTheJobs,
     addNameChangedCallback,
     removeNameChangedCallback,
+    SettingVariable,
 )
 
 # from tools.brushFunctions import BrushFunctions
 from brushTools.catchEventsUI import CatchEventsWidget, rootWindow
 from brushTools.brushPythonFunctions import setColorsOnJoints, fixOptionVarContext
-
-# To make your color choice reproducible, uncomment the following line:
-# random.seed(10)
-
-
-def get_random_color(pastel_factor=0.5):
-    return [
-        (x + pastel_factor) / (1.0 + pastel_factor)
-        for x in [random.uniform(0, 1.0) for i in [1, 2, 3]]
-    ]
-
-
-def color_distance(c1, c2):
-    return sum([abs(x[0] - x[1]) for x in zip(c1, c2)])
-
-
-def generate_new_color(existing_colors, pastel_factor=0.5):
-    max_distance = None
-    best_color = None
-    for i in range(0, 100):
-        color = get_random_color(pastel_factor=pastel_factor)
-        if not existing_colors:
-            return color
-        best_distance = min([color_distance(color, c) for c in existing_colors])
-        if not max_distance or best_distance > max_distance:
-            max_distance = best_distance
-            best_color = color
-    return best_color
+from brushTools import brushPythonFunctions
 
 
 class ValueSettingPE(ValueSetting):
     # def doSet(self, theVal):
     #     self.mainWindow.value = theVal
+    blockPostSet = False
 
     def postSet(self):
-        print "POSTSET"
-        if cmds.currentCtx() == "BlurSkinartAttrContext":
-            cmds.artAttrCtx(thePaintContextName, e=True, value=self.mainWindow.value)
+        if not self.blockPostSet:
+            if cmds.currentCtx() == "brSkinBrushContext1":
+                value = self.theSpinner.value()
+                if self.commandArg == "strength":
+                    value /= 100.0
+                kArgs = {"edit": True}
+                kArgs[self.commandArg] = value
+                cmds.brSkinBrushContext("brSkinBrushContext1", **kArgs)
 
     def progressValueChanged(self, val):
-        print "progressValueChanged"
-
         pos = self.theProgress.pos().x() + val / 100.0 * (
             self.theProgress.width() - self.btn.width()
         )
@@ -82,6 +60,9 @@ class ValueSettingPE(ValueSetting):
         if "text" in kwargs:
             text = kwargs["text"]
             kwargs.pop("text")
+        if "commandArg" in kwargs:
+            self.commandArg = kwargs["commandArg"]
+            kwargs.pop("commandArg")
         super(ValueSettingPE, self).__init__(*args, **kwargs)
 
         self.theProgress.valueChanged.connect(self.progressValueChanged)
@@ -637,12 +618,14 @@ class SkinPaintWin(Window):
             self.multi_rb.setChecked(True)
 
     def updateStrengthVal(self, value):
-        self.valueSetter.setVal(value * 100.0)
-        self.valueSetter.theProgress.setValue(value * 100.0)
+        with SettingVariable(self.valueSetter, "blockPostSet", valueOn=True, valueOut=False):
+            self.valueSetter.setVal(value * 100.0)
+            self.valueSetter.theProgress.setValue(value * 100.0)
 
     def updateSizeVal(self, value):
-        self.sizeBrushSetter.setVal(value)
-        self.sizeBrushSetter.theProgress.setValue(value)
+        with SettingVariable(self.sizeBrushSetter, "blockPostSet", valueOn=True, valueOut=False):
+            self.sizeBrushSetter.setVal(value)
+            self.sizeBrushSetter.theProgress.setValue(value)
 
     def updateCurrentInfluence(self, jointName):
         items = {}
@@ -823,6 +806,10 @@ class SkinPaintWin(Window):
         self.refresh_btn.clicked.connect(self.refreshBtn)
         self.enterPaint_btn.clicked.connect(self.enterPaint)
 
+        self.deleteExisitingColorSets_btn.clicked.connect(
+            brushPythonFunctions.deleteExistingColorSets
+        )
+
         self.showLocks_btn.setIcon(_icons["eye"])
         self.showLocks_btn.toggled.connect(self.showHideLocks)
         self.showLocks_btn.setText("")
@@ -936,10 +923,14 @@ class SkinPaintWin(Window):
         self.uiToActivateWithPaint = ["pickVertex_btn", "pickInfluence_btn", "mirrorActive_cb"]
         for btnName in self.uiToActivateWithPaint:
             self.__dict__[btnName].setEnabled(False)
-        self.valueSetter = ValueSettingPE(self, precision=2, text="intensity", spacing=2)
+        self.valueSetter = ValueSettingPE(
+            self, precision=2, text="intensity", commandArg="strength", spacing=2
+        )
         self.valueSetter.setAddMode(False, autoReset=False)
 
-        self.sizeBrushSetter = ValueSettingPE(self, precision=2, text="brush size", spacing=2)
+        self.sizeBrushSetter = ValueSettingPE(
+            self, precision=2, text="brush size", commandArg="size", spacing=2
+        )
         self.sizeBrushSetter.setAddMode(False, autoReset=False)
 
         Hlayout = QtWidgets.QHBoxLayout(self)
@@ -1158,24 +1149,16 @@ class SkinPaintWin(Window):
         cmds.select(self.dataOfSkin.deformedShape)
         self.refresh(force=True)
 
-    def prepareToGetHighestInfluence(self):
-        self.highestInfluence = -1
-        self.dataOfSkin.softOn = False
-        self.dataOfSkin.rawSkinValues = self.dataOfSkin.exposeSkinData(
-            self.dataOfSkin.theSkinCluster
-        )
-        self.dataOfSkin.convertRawSkinToNumpyArray()
+    # def getHighestInfluence (self, vtxIndex) :
+    #     highestDriver = np.argmax(self.dataOfSkin.raw2dArray [vtxIndex] )
+    #     self.highestInfluence  = self.dataOfSkin.indicesJoints [highestDriver ]
+    #     return self.dataOfSkin.driverNames [highestDriver]
 
-    def getHighestInfluence(self, vtxIndex):
-        highestDriver = np.argmax(self.dataOfSkin.raw2dArray[vtxIndex])
-        self.highestInfluence = self.dataOfSkin.indicesJoints[highestDriver]
-        return self.dataOfSkin.driverNames[highestDriver]
-
-    def selectPickedInfluence(self):
-        if self.highestInfluence in self.dataOfSkin.indicesJoints:
-            highestDriver = self.dataOfSkin.indicesJoints.index(self.highestInfluence)
-            # print self.highestInfluence, highestDriver
-            self.uiInfluenceTREE.setCurrentItem(self.uiInfluenceTREE.topLevelItem(highestDriver))
+    # def selectPickedInfluence (self) :
+    #     if self.highestInfluence in self.dataOfSkin.indicesJoints:
+    #         highestDriver = self.dataOfSkin.indicesJoints.index (self.highestInfluence)
+    #         #print self.highestInfluence, highestDriver
+    #         self.uiInfluenceTREE.setCurrentItem (self.uiInfluenceTREE.topLevelItem(highestDriver))
 
     def refreshColorsAndLocks(self):
         for i in range(self.uiInfluenceTREE.topLevelItemCount()):

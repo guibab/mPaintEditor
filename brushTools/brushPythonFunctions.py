@@ -14,6 +14,8 @@ updateWireFrameColorSoloMode
 """
 # To make your color choice reproducible, uncomment the following line:
 # random.seed(10)
+
+
 def get_random_color(pastel_factor=0.5):
     return [
         (x + pastel_factor) / (1.0 + pastel_factor)
@@ -430,6 +432,15 @@ def fixOptionVarContext():
         cmd = "-".join(newSpl)
         cmds.optionVar(stringValue=["brSkinBrushContext1", cmd])
     return kwargs
+
+
+def deleteExistingColorSets():
+    sel = cmds.ls(sl=True)
+    for obj in sel:
+        existingColorSets = cmds.polyColorSet(obj, q=True, allColorSets=True) or []
+        for colSet in ["multiColorsSet", "multiColorsSet2", "soloColorsSet", "soloColorsSet2"]:
+            if colSet in existingColorSets:
+                cmds.polyColorSet(obj, delete=True, colorSet=colSet)
 
 
 ######################### --------------CALL FROM BRUSH------------------------- ###############################################
