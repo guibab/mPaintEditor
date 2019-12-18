@@ -57,23 +57,53 @@ def generate_new_color(existing_colors, pastel_factor=0.5):
     return best_color
 
 
-thePaintContextName = "BlurSkinartAttrContext"
-
-
-def deleteNodesOnSave(*args, **kwargs):
-    print "delete blurSkinDisplay Nodes On Save "
-    nodeToDelete = cmds.ls(type="blurSkinDisplay")
-    if nodeToDelete:
-        cmds.delete(nodeToDelete)
-
-
 class ValueSettingPE(ValueSetting):
-    def doSet(self, theVal):
-        self.mainWindow.value = theVal
+    # def doSet(self, theVal):
+    #     self.mainWindow.value = theVal
 
     def postSet(self):
-        if cmds.currentCtx() == thePaintContextName:
+        print "POSTSET"
+        if cmds.currentCtx() == "BlurSkinartAttrContext":
             cmds.artAttrCtx(thePaintContextName, e=True, value=self.mainWindow.value)
+
+    def progressValueChanged(self, val):
+        print "progressValueChanged"
+
+        pos = self.theProgress.pos().x() + val / 100.0 * (
+            self.theProgress.width() - self.btn.width()
+        )
+        self.btn.move(pos, 0)
+
+    def updateBtn(self):
+        self.progressValueChanged(self.theProgress.value())
+
+    def __init__(self, *args, **kwargs):
+        text = ""
+        if "text" in kwargs:
+            text = kwargs["text"]
+            kwargs.pop("text")
+        super(ValueSettingPE, self).__init__(*args, **kwargs)
+
+        self.theProgress.valueChanged.connect(self.progressValueChanged)
+        self.theProgress.setTextVisible(True)
+        self.theProgress.setFormat(text)
+        self.theProgress.setMaximumHeight(12)
+        self.theSpinner.setMaximumHeight(16)
+        self.setMinimumHeight(18)
+
+        self.theSpinner.setMaximum(100)
+        self.theSpinner.setMinimum(0)
+
+        btn = QtWidgets.QFrame(self)
+        btn.show()
+        btn.resize(6, 18)
+        btn.move(100, 0)
+        btn.pos()
+        btn.show()
+        btn.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, True)
+        btn.setStyleSheet("border : 1px solid black; background-color:rgb(200,200,200)")
+        self.btn = btn
+        self.updateBtn()
 
 
 def getIcon(iconNm):
@@ -253,9 +283,6 @@ class SkinPaintWin(Window):
 
         if not cmds.pluginInfo("blurSkin", query=True, loaded=True):
             cmds.loadPlugin("blurSkin")
-        if not cmds.artAttrCtx(thePaintContextName, query=True, ex=True):
-            cmds.artAttrCtx(name=thePaintContextName)
-
         blurdev.gui.loadUi(__file__, self)
 
         self.useShortestNames = (
@@ -281,11 +308,10 @@ class SkinPaintWin(Window):
 
         self.theHelpWidget = HelpWidget(self)
 
-        # if self.EVENTCATCHER == None : self.EVENTCATCHER = CatchEventsWidget (connectedWindow = self, thePaintContextName = thePaintContextName)
-
     def showEvent(self, event):
         super(SkinPaintWin, self).showEvent(event)
         self.addCallBacks()
+        cmds.evalDeferred(self.updateUIwithContextValues)
 
     def colorSelected(self, color):
         values = [color.red() / 255.0, color.green() / 255.0, color.blue() / 255.0]
@@ -448,13 +474,6 @@ class SkinPaintWin(Window):
     def addCallBacks(self):
         self.renameCallBack = addNameChangedCallback(self.renameCB)
         self.refreshSJ = cmds.scriptJob(event=["SelectionChanged", self.refreshCallBack])
-        # create callBack to end
-        import __main__
-
-        if "PEW_preSaveCallback" not in __main__.__dict__:
-            __main__.PEW_preSaveCallback = OpenMaya.MSceneMessage.addCallback(
-                OpenMaya.MSceneMessage.kBeforeSave, deleteNodesOnSave
-            )
         """
         #self.listJobEvents =[refreshSJ] 
         sceneUpdateCallback = OpenMaya.MSceneMessage.addCallback(OpenMaya.MSceneMessage.kBeforeNew, self.deselectAll )  #kSceneUpdate
@@ -463,7 +482,10 @@ class SkinPaintWin(Window):
         """
 
     def deleteCallBacks(self):
-        removeNameChangedCallback(self.renameCallBack)
+        try:
+            removeNameChangedCallback(self.renameCallBack)
+        except RuntimeError:
+            print "can't remove it "
         deleteTheJobs("SkinPaintWin.refreshCallBack")
         deleteTheJobs("SkinPaintWin.updateMirrorCB")
         # cmds.scriptJob( kill=self.refreshSJ, force=True)
@@ -471,15 +493,14 @@ class SkinPaintWin(Window):
 
     commandIndex = -1
     value = 1.0
-    commandArray = ["add", "rmv", "addPerc", "abs", "smooth", "sharpen", "locks"]
-
-    def storePrevCommandValue(self):
-        # print "call prevCommand"
-        if self.commandIndex != -1:
-            nmPrev = self.commandArray[self.commandIndex]
-            cmds.optionVar(floatValue=[nmPrev + "_SkinPaintWin", self.value])
-            return nmPrev
-        return "-1"
+    commandArray = ["add", "rmv", "addPerc", "abs", "smooth", "sharpen", "locks", "unLocks"]
+    # def storePrevCommandValue(self):
+    #     #print "call prevCommand"
+    #     if self.commandIndex != -1 :
+    #         nmPrev = self.commandArray [self.commandIndex]
+    #         cmds.optionVar (floatValue = [nmPrev + "_SkinPaintWin",self.value])
+    #         return nmPrev
+    #     return "-1"
 
     def getEnabledButton(self):
         for nm in self.commandArray:
@@ -489,17 +510,16 @@ class SkinPaintWin(Window):
         return None
 
     def changeCommand(self, newCommand):
-        nmPrev = self.storePrevCommandValue()
+        print newCommand
+        # nmPrev = self.storePrevCommandValue ()
 
-        nmNew = self.commandArray[newCommand]
-        optionVarName = nmNew + "_SkinPaintWin"
-        newCommandValue = (
-            cmds.optionVar(q=optionVarName) if cmds.optionVar(exists=optionVarName) else 1.0
-        )
+        # nmNew  = self.commandArray [newCommand]
+        # optionVarName =  nmNew + "_SkinPaintWin"
+        # newCommandValue = cmds.optionVar (q= optionVarName) if cmds.optionVar (exists= optionVarName) else 1.0
 
-        # print nmPrev, " = ",self.value, "  | ", nmNew ," = ", newCommandValue
-        self.commandIndex = newCommand
-        self.setBrushValue(newCommandValue)
+        # #print nmPrev, " = ",self.value, "  | ", nmNew ," = ", newCommandValue
+        # self.commandIndex = newCommand
+        # self.updateStrengthVal(newCommandValue)
 
     def closeEvent(self, event):
         mel.eval("setToolTo $gMove;")
@@ -517,12 +537,6 @@ class SkinPaintWin(Window):
         # if self.EVENTCATCHER!=None: self.EVENTCATCHER.close()
         super(SkinPaintWin, self).closeEvent(event)
 
-    def setBrushValue(self, val):
-        self.value = val
-        # print self.value
-        self.valueSetter.theProgress.applyVal(val)
-        self.valueSetter.setVal(val * 100)
-
     def addButtonsDirectSet(self, lstBtns):
         theCarryWidget = QtWidgets.QWidget()
         carryWidgLayoutlayout = QtWidgets.QHBoxLayout(theCarryWidget)
@@ -536,7 +550,7 @@ class SkinPaintWin(Window):
             if theVal == 0.5:
                 nm = "1/2"
             newBtn = QtWidgets.QPushButton(nm)
-            newBtn.clicked.connect(partial(self.setBrushValue, theVal / 100.0))
+            newBtn.clicked.connect(partial(self.updateStrengthVal, theVal / 100.0))
             carryWidgLayoutlayout.addWidget(newBtn)
         theCarryWidget.setMaximumSize(self.maxWidthCentralWidget, 14)
 
@@ -587,9 +601,10 @@ class SkinPaintWin(Window):
             self.showLocks_btn.setIcon(_icons["eye-half"])
 
     def changeOfValue(self):
-        if cmds.currentCtx() == thePaintContextName:
-            currentVal = cmds.artAttrCtx(thePaintContextName, q=True, value=True)
-            self.setBrushValue(currentVal)
+        pass
+        # if cmds.currentCtx() == thePaintContextName:
+        #     currentVal = cmds.artAttrCtx(thePaintContextName ,q=True,value = True)
+        #     self.updateStrengthVal (currentVal)
 
     def enterPaint(self):
         if not cmds.pluginInfo(" brSkinBrush", query=True, loaded=True):
@@ -597,7 +612,6 @@ class SkinPaintWin(Window):
         if self.dataOfSkin.theSkinCluster:
             # print "ENTERPAINT \n"
             setColorsOnJoints()
-            fixOptionVarContext()
             context = "brSkinBrushContext1"
             if not cmds.contextInfo(context, ex=True):
                 pytonCmd = "from mPaintEditor.brushTools.brushPythonFunctions import "
@@ -620,6 +634,18 @@ class SkinPaintWin(Window):
     def updateStrengthVal(self, value):
         self.valueSetter.setVal(value * 100.0)
         self.valueSetter.theProgress.setValue(value * 100.0)
+
+    def updateSizeVal(self, value):
+        self.sizeBrushSetter.setVal(value)
+        self.sizeBrushSetter.theProgress.setValue(value)
+
+    def updateCurrentInfluence(self, jointName):
+        items = {}
+        for i in range(self.uiInfluenceTREE.topLevelItemCount()):
+            it = self.uiInfluenceTREE.topLevelItem(i)
+            items[it.text(1)] = it
+        self.uiInfluenceTREE.clearSelection()
+        self.uiInfluenceTREE.setCurrentItem(items[jointName])
 
     def changeMultiSolo(self, val):
         print "swap MultiSold"
@@ -887,9 +913,9 @@ class SkinPaintWin(Window):
             thebtn = self.__dict__[nm + "_btn"]
             thebtn.clicked.connect(partial(self.changeCommand, ind))
         # "gaussian", "poly", "solid" and "square"
-        if cmds.artAttrCtx(thePaintContextName, query=True, ex=True):
-            stampProfile = cmds.artAttrCtx(thePaintContextName, query=True, stampProfile=True)
-            self.__dict__[stampProfile + "_btn"].setChecked(True)
+        # if (cmds.artAttrCtx (thePaintContextName, query=True,ex=True)) :
+        #     stampProfile = cmds.artAttrCtx (thePaintContextName, query=True, stampProfile = True)
+        #     self.__dict__ [stampProfile+"_btn"].setChecked (True)
         for ind, nm in enumerate(["gaussian", "poly", "solid", "square"]):
             thebtn = self.__dict__[nm + "_btn"]
             thebtn.setText("")
@@ -905,13 +931,26 @@ class SkinPaintWin(Window):
         self.uiToActivateWithPaint = ["pickVertex_btn", "pickInfluence_btn", "mirrorActive_cb"]
         for btnName in self.uiToActivateWithPaint:
             self.__dict__[btnName].setEnabled(False)
-        self.valueSetter = ValueSettingPE(self, precision=2)
+        self.valueSetter = ValueSettingPE(self, precision=2, text="intensity", spacing=2)
         self.valueSetter.setAddMode(False, autoReset=False)
+
+        self.sizeBrushSetter = ValueSettingPE(self, precision=2, text="brush size", spacing=2)
+        self.sizeBrushSetter.setAddMode(False, autoReset=False)
+
         Hlayout = QtWidgets.QHBoxLayout(self)
         Hlayout.setContentsMargins(0, 0, 0, 0)
         Hlayout.setSpacing(0)
-        Hlayout.addWidget(self.valueSetter)
+
+        Vlayout = QtWidgets.QVBoxLayout(self)
+        Vlayout.setContentsMargins(0, 0, 0, 0)
+        Vlayout.setSpacing(0)
+        Vlayout.addWidget(self.valueSetter)
+        Vlayout.addWidget(self.sizeBrushSetter)
+
+        Hlayout.addLayout(Vlayout)
+
         self.valueSetter.setMaximumSize(self.maxWidthCentralWidget, 18)
+        self.sizeBrushSetter.setMaximumSize(self.maxWidthCentralWidget, 18)
 
         self.widgetAbs = self.addButtonsDirectSet([0.25, 0.5, 1, 2, 5, 10, 25, 50, 75, 100])
 
@@ -924,6 +963,22 @@ class SkinPaintWin(Window):
         dialogLayout.insertLayout(1, Hlayout)
         dialogLayout.insertLayout(1, Hlayout2)
         dialogLayout.insertSpacing(1, 10)
+        cmds.evalDeferred(self.fixUI)
+
+    def fixUI(self):
+        for nm in self.commandArray:
+            self.__dict__[nm + "_btn"].setMinimumHeight(23)
+        self.valueSetter.updateBtn()
+        self.sizeBrushSetter.updateBtn()
+
+    def updateUIwithContextValues(self):
+        KArgs = fixOptionVarContext()
+        self.updateSizeVal(float(KArgs["size"]))
+        self.updateStrengthVal(float(KArgs["strength"]))
+        commandIndex = int(KArgs["commandIndex"])
+        nmBtn = self.commandArray[commandIndex] + "_btn"
+        self.__dict__[nmBtn].setChecked(True)
+        self.updateCurrentInfluence(KArgs["influenceName"])
 
     def clearInputText(self):
         self.searchInfluences_le.clear()
@@ -970,99 +1025,10 @@ class SkinPaintWin(Window):
     # artAttrSkinPaintCtx
     # --------------------------------------------------------------
     def pickMaxInfluence(self):
-        self.pickInfluence(vertexPicking=True)
+        print ("pickMaxInfluence")
 
     def pickInfluence(self, vertexPicking=False):
-        with GlobalContext(message="prepareToGetHighestInfluence", doPrint=True):
-            if vertexPicking:
-                self.prepareToGetHighestInfluence()
-        # self.EVENTCATCHER.createDisplayLabel ( vertexPicking=vertexPicking)
-
-    def pickMaxInfluenceOLD(self):
-        import __main__
-
-        __main__.BLURpickVtxInfluence = self.finalCommandScriptPickVtxInfluence
-        __main__.BLURstartPickVtx = self.startpickVtx
-
-        currContext = cmds.currentCtx()
-        self.inPainting = currContext == thePaintContextName
-
-        # cmds.select (cl=True)
-
-        ctxArgs = {
-            "title": "Select vertex influence",
-            #'finalCommandScript ':"python (\"BLURfinishSkinPaint()\");",
-            "toolStart": 'python ("BLURstartPickVtx()");',
-            #'toolFinish ':"python (\"self.finalCommandScriptPickVtxInfluence()\");",
-            "toolCursorType": "question",
-            "totalSelectionSets": 1,
-            "cumulativeLists": False,
-            "expandSelectionList": True,
-            "setNoSelectionPrompt": "Select Vertex Influence",
-            "setSelectionPrompt": "Never used",
-            "setDoneSelectionPrompt": "Never used because setAutoComplete is set",
-            "setAutoToggleSelection": True,
-            "setSelectionCount": 1,
-            "setAutoComplete": True,
-        }
-        if not cmds.scriptCtx("SelectVertexSkinInfluence", q=True, exists=True):
-            ctxSelection = cmds.scriptCtx(name="SelectVertexSkinInfluence", **ctxArgs)
-        else:
-            cmds.scriptCtx("SelectVertexSkinInfluence", e=True, **ctxArgs)
-
-        cmds.scriptCtx(
-            "SelectVertexSkinInfluence", e=True, toolFinish='python ("BLURpickVtxInfluence()");'
-        )
-        cmds.setToolTo("SelectVertexSkinInfluence")
-
-    # --------------------------------------------------------------
-    # Pick Vtx Influence
-    # --------------------------------------------------------------
-    def startpickVtx(self):
-        self.softOn = cmds.softSelect(q=True, softSelectEnabled=True)
-        if self.softOn:
-            cmds.softSelect(e=True, softSelectEnabled=False)
-        self.currentVertsSel = [el for el in cmds.ls(sl=True) if ".vtx[" in el]
-        if self.currentVertsSel:
-            cmds.select(self.currentVertsSel, d=True)
-
-        cmds.SelectVertexMask()
-
-    def finalCommandScriptPickVtxInfluence(self):
-        theVtxSelection = [el for el in cmds.ls(sl=True, fl=True) if ".vtx[" in el]
-        if theVtxSelection:
-            vtx = theVtxSelection[0]
-            hist = cmds.listHistory(vtx, lv=0, pruneDagObjects=True)
-            if hist:
-                skinClusters = cmds.ls(hist, type="skinCluster")
-                if skinClusters:
-                    skinClus = skinClusters[0]
-                    values = cmds.skinPercent(skinClus, vtx, query=True, value=True)
-                    influences = cmds.skinCluster(skinClus, q=True, influence=True)
-                    maxVal, maxInfluence = sorted(zip(values, influences), reverse=True)[0]
-                    listCurrentInfluences = [
-                        self.uiInfluenceTREE.topLevelItem(i)._influence
-                        for i in range(self.uiInfluenceTREE.topLevelItemCount())
-                    ]
-                    print maxVal, maxInfluence
-                    if maxInfluence in listCurrentInfluences:
-                        ind = listCurrentInfluences.index(maxInfluence)
-                        itemDeformer = self.uiInfluenceTREE.topLevelItem(ind)
-                        self.uiInfluenceTREE.setCurrentItem(itemDeformer)
-                    # theCommand = "selectMode -object;ArtPaintSkinWeightsToolOptions;setSmoothSkinInfluence {0};artSkinRevealSelected artAttrSkinPaintCtx;".format (maxInfluence)
-                    # cmds.evalDeferred( partial ( mel.eval ,theCommand))
-                    if self.inPainting:
-                        cmds.evalDeferred(
-                            partial(mel.eval, "changeSelectMode -hierarchical;ArtPaintAttrTool;")
-                        )
-                    else:
-                        cmds.evalDeferred(
-                            partial(mel.eval, "changeSelectMode -hierarchical;setToolTo $gMove;")
-                        )
-        if self.softOn:
-            cmds.softSelect(e=True, softSelectEnabled=True)
-        if self.currentVertsSel:
-            cmds.select(self.currentVertsSel, add=True)
+        print ("pickInfluence")
 
     def selectedInfluences(self):
         return [item.influence() for item in self.uiInfluenceTREE.selectedItems()]
@@ -1095,7 +1061,7 @@ class SkinPaintWin(Window):
 
     def influenceClicked(self, item, column):
         text = item._influence  # text(1)
-        # print "CLICKED " + text
+        print "CLICKED " + text
         if text in self.dataOfSkin.driverNames:
             # ind = self.dataOfSkin.driverNames.index (text)
             ind = item._index
@@ -1214,8 +1180,8 @@ class SkinPaintWin(Window):
     def refreshCallBack(self):
         currContext = cmds.currentCtx()
         if (
-            not self.lock_btn.isChecked() and currContext != thePaintContextName
-        ):  # dont refresh for paint
+            not self.lock_btn.isChecked()
+        ):  # and currContext != thePaintContextName  : # dont refresh for paint
             self.refresh()
 
     def refresh(self, force=False, renamedCalled=False):

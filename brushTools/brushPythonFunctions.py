@@ -386,6 +386,7 @@ def toggleSoloMode():
 
 
 def fixOptionVarContext():
+    kwargs = {}
     if cmds.optionVar(exists="brSkinBrushContext1"):
         cmd = cmds.optionVar(q="brSkinBrushContext1")
         spl = cmd.split("-")
@@ -397,12 +398,19 @@ def fixOptionVarContext():
                 kArg = "-" + lineSplit[0]
                 if kArg not in hlp:
                     continue
+                else:
+                    kwargs[lineSplit[0]] = " ".join(lineSplit[1:])
+            else:
+                kwargs[lineSplit[0]] = True
             newSpl.append(lne)
         cmd = "-".join(newSpl)
         cmds.optionVar(stringValue=["brSkinBrushContext1", cmd])
+    return kwargs
 
 
 ######################### --------------CALL FROM BRUSH------------------------- ###############################################
+
+
 def getPaintEditor():
     import __main__
 
@@ -424,7 +432,7 @@ def headsUpMessage(offsetX, offsetY, message, valueDisplay, precision):
 
 
 def pickedInfluence(jointName):
-    print "pickedInfluence from python"
+    print "pickedInfluence from python 2.0"
     if cmds.treeView("brSkinBrushJointTree", q=True, ex=True):
         cmds.treeView("brSkinBrushJointTree", edit=True, clearSelection=True)
         cmds.treeView("brSkinBrushJointTree", edit=True, showItem=jointName)
@@ -433,22 +441,16 @@ def pickedInfluence(jointName):
             + jointName
             + '" };'
         )
-    paintEditor = getPaintEditor()
-    if paintEditor:
-        items = {}
-        influenceTree = paintEditor.uiInfluenceTREE
-        for i in range(influenceTree.topLevelItemCount()):
-            it = influenceTree.topLevelItem(i)
-            items[it.text(1)] = it
-        influenceTree.clearSelection()
-        influenceTree.setCurrentItem(items[jointName])
+    callPaintEditorFunction("updateCurrentInfluence", jointName)
 
 
 def updateDisplayStrengthOrSize(sizeAdjust, value):
     fsg = "brSkinBrushSize" if sizeAdjust else "brSkinBrushStrength"
     if cmds.floatSliderGrp(fsg, q=True, ex=True):
         cmds.floatSliderGrp(fsg, e=True, value=value)
-    if not sizeAdjust:
+    if sizeAdjust:
+        callPaintEditorFunction("updateSizeVal", value)
+    else:
         callPaintEditorFunction("updateStrengthVal", value)
 
 
