@@ -391,17 +391,41 @@ def fixOptionVarContext():
         cmd = cmds.optionVar(q="brSkinBrushContext1")
         spl = cmd.split("-")
         hlp = cmds.help("brSkinBrushContext")
+
+        dicOfName = {}
+        dicExpectedArgs = {}
+        lsMulti = set()
+        for ln in hlp.split("\n"):
+            for expectedStuff in [
+                "(Query Arg Mandatory)",
+                "(Query Arg Optional)",
+                "[...]",
+                "(Query Arg Optional)",
+            ]:
+                ln = ln.replace(expectedStuff, "")
+            ln = ln.strip()
+            res = ln.split()
+            if len(res) >= 2 and res[0].startswith("-") and res[1].startswith("-"):
+                nmFlag = res[1][1:]
+                dicOfName[res[0][1:]] = nmFlag
+                dicOfName[res[1][1:]] = nmFlag
+                if "(multi-use)" in res:
+                    lsMulti.add(nmFlag)
+                    res.remove("(multi-use)")
+                finishVal = res[2:]
+                dicExpectedArgs[nmFlag] = res[2:]
         newSpl = []
-        for lne in spl:
+        for lne in spl[1:]:
             lineSplit = lne.strip().split(" ")
+
             if len(lineSplit) > 1:
                 kArg = "-" + lineSplit[0]
                 if kArg not in hlp:
                     continue
                 else:
-                    kwargs[lineSplit[0]] = " ".join(lineSplit[1:])
+                    kwargs[dicOfName[lineSplit[0]]] = " ".join(lineSplit[1:])
             else:
-                kwargs[lineSplit[0]] = True
+                kwargs[dicOfName[lineSplit[0]]] = True
             newSpl.append(lne)
         cmd = "-".join(newSpl)
         cmds.optionVar(stringValue=["brSkinBrushContext1", cmd])
