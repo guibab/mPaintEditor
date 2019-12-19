@@ -449,7 +449,7 @@ def deleteExistingColorSets():
 def getPaintEditor():
     import __main__
 
-    if hasattr(__main__, "paintEditor"):
+    if hasattr(__main__, "paintEditor") and __main__.paintEditor.isVisible():
         return __main__.paintEditor
     return None
 
@@ -458,7 +458,11 @@ def callPaintEditorFunction(function, *args, **kwargs):
     paintEditor = getPaintEditor()
     if paintEditor and hasattr(paintEditor, function):
         fn = getattr(paintEditor, function)
-        fn(*args, **kwargs)
+        if callable(fn):
+            return fn(*args, **kwargs)
+        else:
+            return fn
+    return None
 
 
 def headsUpMessage(offsetX, offsetY, message, valueDisplay, precision):

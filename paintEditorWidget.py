@@ -262,8 +262,8 @@ class SkinPaintWin(Window):
 
         __main__.paintEditor = self
 
-        if not cmds.pluginInfo("blurSkin", query=True, loaded=True):
-            cmds.loadPlugin("blurSkin")
+        if not cmds.pluginInfo("brSkinBrush", q=True, loaded=True):
+            cmds.loadPlugin("brSkinBrush")
         blurdev.gui.loadUi(__file__, self)
 
         self.useShortestNames = (
@@ -482,27 +482,24 @@ class SkinPaintWin(Window):
     #         cmds.optionVar (floatValue = [nmPrev + "_SkinPaintWin",self.value])
     #         return nmPrev
     #     return "-1"
+    highlightingBtn = False
+
+    def highlightBtn(self, btnName):
+        thebtn = self.__dict__[btnName + "_btn"]
+        thebtn.setChecked(True)
 
     def getEnabledButton(self):
         for nm in self.commandArray:
             thebtn = self.__dict__[nm + "_btn"]
             if thebtn.isChecked():
-                return thebtn
+                return nm
         return None
 
     def changeCommand(self, newCommand):
+        print "changeCommand"
         if self.isInPaint():
             # commandIndex = self.commandArray[newCommand]
             cmds.brSkinBrushContext("brSkinBrushContext1", edit=True, commandIndex=newCommand)
-        # nmPrev = self.storePrevCommandValue ()
-
-        # nmNew  = self.commandArray [newCommand]
-        # optionVarName =  nmNew + "_SkinPaintWin"
-        # newCommandValue = cmds.optionVar (q= optionVarName) if cmds.optionVar (exists= optionVarName) else 1.0
-
-        # #print nmPrev, " = ",self.value, "  | ", nmNew ," = ", newCommandValue
-        # self.commandIndex = newCommand
-        # self.updateStrengthVal(newCommandValue)
 
     def closeEvent(self, event):
         mel.eval("setToolTo $gMove;")
