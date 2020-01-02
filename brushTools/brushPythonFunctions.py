@@ -1,6 +1,7 @@
 from maya import cmds, mel
 import re
 import time, datetime
+from collections import OrderedDict
 
 """
 import brSkinBrush_pythonFunctions
@@ -320,11 +321,14 @@ def toolOnSetupEnd():
     completionTime = time.time() - startTime
     timeRes = str(datetime.timedelta(seconds=int(completionTime))).split(":")
     # result = "{} hours {} mins {} secs".format (*timeRes)
+
+    callPaintEditorFunction("paintStart")
     print "----- load BRUSH for {} in  [{:.2f} secs] ------".format(mshShape, completionTime)
 
 
 def toolOffCleanup():
     print "finishing tool\n"
+    callPaintEditorFunction("paintEnd")
     closeEventCatcher()
     if cmds.objExists("SkinningWireframe"):
         cmds.delete("SkinningWireframe")
@@ -387,11 +391,14 @@ def toggleSoloMode():
     callPaintEditorFunction("upateSoloModeRBs", not soloColor)
 
 
-def fixOptionVarContext():
-    kwargs = {}
+def fixOptionVarContext(**inputKargsToChange):
+    kwargs = OrderedDict()
     if cmds.optionVar(exists="brSkinBrushContext1"):
         cmd = cmds.optionVar(q="brSkinBrushContext1")
-        spl = cmd.split("-")
+        # remove command name and command object at the end : brSkinBrushContext anmd brSkinBrushContext1;
+        splitofspaces = cmd.split(" ")
+        cmd2 = " ".join(splitofspaces[1:-1])
+        spl = cmd2.split("-")
         hlp = cmds.help("brSkinBrushContext")
 
         dicOfName = {}
@@ -417,7 +424,7 @@ def fixOptionVarContext():
                 finishVal = res[2:]
                 dicExpectedArgs[nmFlag] = res[2:]
         newSpl = []
-        for lne in spl[1:]:
+        for lne in spl:
             lineSplit = lne.strip().split(" ")
 
             if len(lineSplit) > 1:
@@ -425,12 +432,30 @@ def fixOptionVarContext():
                 if kArg not in hlp:
                     continue
                 else:
-                    kwargs[dicOfName[lineSplit[0]]] = " ".join(lineSplit[1:])
+                    value = " ".join(lineSplit[1:])
+                    value = value.strip()
+                    if value.startswith('"') and value.endswith('"'):
+                        value = value[1:-1]
+                    kwargs[dicOfName[lineSplit[0]]] = value
             else:
-                kwargs[dicOfName[lineSplit[0]]] = True
+                if lineSplit[0] in dicOfName:
+                    kwargs[dicOfName[lineSplit[0]]] = True
             newSpl.append(lne)
-        cmd = "-".join(newSpl)
-        cmds.optionVar(stringValue=["brSkinBrushContext1", cmd])
+        # now rebuild command ---------------------------------
+        kwargs.update(inputKargsToChange)
+        cmdNew = "brSkinBrushContext "
+        for key, value in kwargs.iteritems():
+            if isinstance(value, bool):
+                cmdNew += "-{} ".format(key)
+            else:
+                try:
+                    float(value)
+                    cmdNew += "-{} {} ".format(key, value)
+                except ValueError:
+                    cmdNew += '-{} "{}" '.format(key, value)
+        cmdNew += splitofspaces[-1]
+        # cmdNew = "brSkinBrushContext -" + "-".join(newSpl)
+        cmds.optionVar(stringValue=["brSkinBrushContext1", cmdNew])
     return kwargs
 
 

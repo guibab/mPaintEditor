@@ -473,6 +473,7 @@ class SkinPaintWin(Window):
         # for callBck in self.close_callback : OpenMaya.MSceneMessage.removeCallback(callBck)
 
     commandIndex = -1
+    previousInfluenceName = ""
     value = 1.0
     commandArray = ["add", "rmv", "addPerc", "abs", "smooth", "sharpen", "locks", "unLocks"]
     # def storePrevCommandValue(self):
@@ -625,12 +626,21 @@ class SkinPaintWin(Window):
             self.sizeBrushSetter.theProgress.setValue(value)
 
     def updateCurrentInfluence(self, jointName):
+        print "updateCurrentInfluence {}".format(jointName)
         items = {}
+        ito = None
         for i in range(self.uiInfluenceTREE.topLevelItemCount()):
             it = self.uiInfluenceTREE.topLevelItem(i)
             items[it.text(1)] = it
-        self.uiInfluenceTREE.clearSelection()
-        self.uiInfluenceTREE.setCurrentItem(items[jointName])
+            if i == 0:
+                ito = it
+        if jointName in items:
+            self.uiInfluenceTREE.clearSelection()
+            self.uiInfluenceTREE.setCurrentItem(items[jointName])
+        else:
+            self.uiInfluenceTREE.clearSelection()
+            if ito:  # if there's joints , selct first one
+                self.uiInfluenceTREE.setCurrentItem(ito)
 
     def changeMultiSolo(self, val):
         print "swap MultiSold"
@@ -975,7 +985,9 @@ class SkinPaintWin(Window):
             nmBtn = self.commandArray[commandIndex] + "_btn"
             self.__dict__[nmBtn].setChecked(True)
         if "influenceName" in KArgs:
-            self.updateCurrentInfluence(KArgs["influenceName"])
+            jointName = KArgs["influenceName"]
+            self.previousInfluenceName = jointName
+            self.updateCurrentInfluence(jointName)
 
     def clearInputText(self):
         self.searchInfluences_le.clear()
@@ -1213,35 +1225,19 @@ class SkinPaintWin(Window):
 
                 jointItem.isZeroDfm = ind in self.dataOfSkin.hideColumnIndices
                 jointItem.setHidden(not self.showZeroDeformers and jointItem.isZeroDfm)
+            self.updateCurrentInfluence(self.previousInfluenceName)
 
-    def paintEnd(self):
-        # self.EVENTCATCHER.fermer()#removeFilters ()
+    def paintEnd(self):  # called by the brush
         for btnName in self.uiToActivateWithPaint:
             self.__dict__[btnName].setEnabled(False)
-        self.setStyleSheet(styleSheet)
-        self.changeMultiSolo(-1)
-        self.dataOfSkin.getConnectedBlurskinDisplay(disconnectWeightList=True)
+        self.uiInfluenceTREE.setStyleSheet("")
+        # self.changeMultiSolo(-1)
 
-    def paintStart(self):
-        print "paintStart"
-        # self.enterPaint ( withBrushFn = False)
-
-        prevSelection = cmds.ls(sl=True)
-        # convert to vertices
-
-        # self.brushFunctions.bsd = self.dataOfSkin.getConnectedBlurskinDisplay ()
-        # if not self.brushFunctions.bsd :
-        #     self.brushFunctions.doAddColorNode (self.dataOfSkin.deformedShape, self.dataOfSkin.theSkinCluster)
-        #     self.transferValues ()
-
-        # self.EVENTCATCHER.open()
+    def paintStart(self):  # called by the brush
         for btnName in self.uiToActivateWithPaint:
             self.__dict__[btnName].setEnabled(True)
-        self.setStyleSheet(styleSheet + "SkinPaintWin {border : 2px solid red}")
-        self.changeMultiSolo(self.multi_rb.isChecked())
-
-        # reselect
-        cmds.select(prevSelection)
+        self.uiInfluenceTREE.setStyleSheet("QWidget {border : 2px solid red}\n")
+        # self.changeMultiSolo(self.multi_rb.isChecked ())
 
 
 # -------------------------------------------------------------------------------
