@@ -333,7 +333,7 @@ class SkinPaintWin(Window):
     def buildRCMenu(self):
         self.mainPopMenu = QtWidgets.QMenu(self)
         self.subMenuSoloColor = self.mainPopMenu.addMenu("solo color")
-        self.soloColorIndex = (
+        soloColorIndex = (
             cmds.optionVar(q="soloColor_SkinPaintWin")
             if cmds.optionVar(exists="soloColor_SkinPaintWin")
             else 0
@@ -342,7 +342,7 @@ class SkinPaintWin(Window):
             theFn = partial(self.updateSoloColor, ind)
             act = self.subMenuSoloColor.addAction(colType, theFn)
             act.setCheckable(True)
-            act.setChecked(self.soloColorIndex == ind)
+            act.setChecked(soloColorIndex == ind)
         self.mainPopMenu.addAction("help", self.showHelp)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showMainMenu)
@@ -407,10 +407,12 @@ class SkinPaintWin(Window):
         self.soloColor_cb.setCurrentIndex(ind)
 
     def comboSoloColorChanged(self, ind):
-        self.soloColorIndex = ind
+        soloColorIndex = ind
         cmds.optionVar(intValue=["soloColor_SkinPaintWin", ind])
         for i in range(3):
             self.subMenuSoloColor.actions()[i].setChecked(i == ind)
+        if self.isInPaint():
+            cmds.brSkinBrushContext("brSkinBrushContext1", edit=True, soloColorType=ind)
 
     def showZeroDefmChecked(self, checked):
         cmds.optionVar(intValue=["showZeroDeformers", checked])
@@ -430,17 +432,6 @@ class SkinPaintWin(Window):
         self.setWindowTitle("Paint Editor")
         # self.refreshPosition ()
         self.show()
-
-    # def refreshPosition(self):
-    #     if cmds.optionVar (ex="SkinPaintWindow") :
-    #         vals = cmds.optionVar (q="SkinPaintWindow")
-    #         if vals :
-    #             self.move(vals[0], vals[1])
-    #             self.resize(vals[2], vals[3])
-    #         if len (vals) > 4 :
-    #             self.changeCommand ( vals[4])
-    #             thebtn = self.__dict__ [self.commandArray[vals[4]]+"_btn"]
-    #             thebtn.setChecked(True)
 
     def renameCB(self, oldName, newName):
         if self.dataOfSkin:
@@ -883,21 +874,12 @@ class SkinPaintWin(Window):
         # self.mirrorActive_cb.toggled.connect (self.toggleMirror)
         # self.mirrorActive_cb.toggled.connect (self.checkIfSameValue)
         # self.mirrorStore_btn.clicked.connect (self.getMirrorInfluenceArray)
-
-        self.soloColorIndex = (
-            cmds.optionVar(q="soloColor_SkinPaintWin")
-            if cmds.optionVar(exists="soloColor_SkinPaintWin")
-            else 0
-        )
-        self.soloColor_cb.setCurrentIndex(self.soloColorIndex)
         self.soloColor_cb.currentIndexChanged.connect(self.comboSoloColorChanged)
         # self.uiInfluenceTREE.itemSelectionChanged.connect(self.influenceSelChanged)
         self.uiInfluenceTREE.itemDoubleClicked.connect(self.influenceDoubleClicked)
         self.uiInfluenceTREE.itemClicked.connect(self.influenceClicked)
 
-        self.option_cb.toggled.connect(self.option_GB.setChecked)
-        self.option_cb.toggled.connect(self.option_GB.setVisible)
-        self.option_GB.setVisible(False)
+        self.option_btn.clicked.connect(self.displayOptions)
 
         self.addInfluences_btn.clicked.connect(self.addInfluences)
         self.removeInfluences_btn.clicked.connect(self.removeInfluences)
@@ -983,6 +965,18 @@ class SkinPaintWin(Window):
         dialogLayout.insertLayout(1, Hlayout2)
         dialogLayout.insertSpacing(1, 10)
         cmds.evalDeferred(self.fixUI)
+
+        self.scrollAreaWidgetContents.layout().setContentsMargins(20, 20, 20, 20)
+        sz = self.splitter.sizes()
+        self.splitter.setSizes([sz[0] + sz[1], 0])
+
+    def displayOptions(self, val):
+        sz = self.splitter.sizes()
+        sumSizes = sz[0] + sz[1]
+        if sz[1] != 0:
+            self.splitter.setSizes([sumSizes, 0])
+        else:
+            self.splitter.setSizes([sumSizes - 150, 150])
 
     def fixUI(self):
         for nm in self.commandArray:
