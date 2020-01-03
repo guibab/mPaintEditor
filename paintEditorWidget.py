@@ -111,6 +111,10 @@ _icons = {
     "gaussian": getIcon("circleGauss"),
     "poly": getIcon("circlePoly"),
     "solid": getIcon("circleSolid"),
+    "curveNone": getIcon("brSkinBrushNone"),
+    "curveLinear": getIcon("brSkinBrushLinear"),
+    "curveSmooth": getIcon("brSkinBrushSmooth"),
+    "curveNarrow": getIcon("brSkinBrushNarrow"),
     "clearText": getIcon("clearText"),
     "square": getIcon("rect"),
     "refresh": Icons.getIcon("refresh"),
@@ -919,16 +923,11 @@ class SkinPaintWin(Window):
         for ind, nm in enumerate(self.commandArray):
             thebtn = self.__dict__[nm + "_btn"]
             thebtn.clicked.connect(partial(self.changeCommand, ind))
-        # "gaussian", "poly", "solid" and "square"
-        # if (cmds.artAttrCtx (thePaintContextName, query=True,ex=True)) :
-        #     stampProfile = cmds.artAttrCtx (thePaintContextName, query=True, stampProfile = True)
-        #     self.__dict__ [stampProfile+"_btn"].setChecked (True)
-        for ind, nm in enumerate(["gaussian", "poly", "solid", "square"]):
+        for ind, nm in enumerate(["curveNone", "curveLinear", "curveSmooth", "curveNarrow"]):
             thebtn = self.__dict__[nm + "_btn"]
             thebtn.setText("")
-            # "gaussian", "poly", "solid" and "square"
-
             thebtn.setIcon(_icons[nm])
+            thebtn.clicked.connect(partial(self.brSkinConn, "curve", ind))
         self.smooth_btn.toggled.connect(self.updateOptionEnable)
         self.sharpen_btn.toggled.connect(self.updateOptionEnable)
         self.updateOptionEnable(True)
@@ -1039,6 +1038,11 @@ class SkinPaintWin(Window):
             commandIndex = int(KArgs["commandIndex"])
             nmBtn = self.commandArray[commandIndex] + "_btn"
             self.__dict__[nmBtn].setChecked(True)
+        if "curve" in KArgs:
+            curveIndex = int(KArgs["curve"])
+            nm = ["curveNone", "curveLinear", "curveSmooth", "curveNarrow"][curveIndex]
+            thebtn = self.__dict__[nm + "_btn"]
+            thebtn.setChecked(True)
         if "smoothStrength" in KArgs:
             self.smoothStrengthVarStored = float(KArgs["smoothStrength"])
             if self.smooth_btn.isChecked():
@@ -1325,48 +1329,37 @@ class SkinPaintWin(Window):
         cmds.brSkinBrushContext("brSkinBrushContext1", **dicValues)
         # self.checkCorrectUI()
 
-    def checkCorrectUI(self):
-        if self.isInPaint():
-            # commandIndex = self.commandArray[newCommand]
-            commandIndex = cmds.brSkinBrushContext(
-                "brSkinBrushContext1", query=True, commandIndex=True
-            )
-            soloColor = cmds.brSkinBrushContext("brSkinBrushContext1", query=True, soloColor=True)
-            soloColorType = cmds.brSkinBrushContext(
-                "brSkinBrushContext1", query=True, soloColorType=True
-            )
-            size = cmds.brSkinBrushContext("brSkinBrushContext1", query=True, size=True)
-            strength = cmds.brSkinBrushContext("brSkinBrushContext1", query=True, strength=True)
-            influenceName = cmds.brSkinBrushContext(
-                "brSkinBrushContext1", query=True, influenceName=True
-            )
+    # def checkCorrectUI(self):
+    #     if self.isInPaint():
+    #         #commandIndex = self.commandArray[newCommand]
+    #         commandIndex = cmds.brSkinBrushContext("brSkinBrushContext1", query=True, commandIndex=True)
+    #         soloColor = cmds.brSkinBrushContext("brSkinBrushContext1", query=True, soloColor=True)
+    #         soloColorType = cmds.brSkinBrushContext("brSkinBrushContext1", query=True, soloColorType=True)
+    #         size = cmds.brSkinBrushContext("brSkinBrushContext1", query=True, size=True)
+    #         strength = cmds.brSkinBrushContext("brSkinBrushContext1", query=True, strength=True)
+    #         influenceName = cmds.brSkinBrushContext("brSkinBrushContext1", query=True, influenceName=True)
 
-            val = cmds.brSkinBrushContext(
-                "brSkinBrushContext1", query=True, useColorSetsWhilePainting=True
-            )
-            if val:
-                self.colorSets_rb.setChecked(True)
-            else:
-                self.drawManager_rb.setChecked(True)
+    #         val = cmds.brSkinBrushContext("brSkinBrushContext1", query=True, useColorSetsWhilePainting=True)
+    #         if val: self.colorSets_rb.setChecked(True)
+    #         else: self.drawManager_rb.setChecked(True)
 
-            for att in self.listCheckBoxesDirectAction:
-                dic = {"edit": True}
-                dic[att] = True
-                val = cmds.brSkinBrushContext("brSkinBrushContext1", **dic)
-                self.__dict__[att + "_cb"].setChecked(val)
-            if soloColor:
-                self.solo_rb.setChecked(True)
-            else:
-                self.multi_rb.setChecked(True)
-            self.soloColor_cb.setCurrentIndex(soloColorType)
+    #         for att in self.listCheckBoxesDirectAction:
+    #             dic = {"edit": True}
+    #             dic[att] = True
+    #             val = cmds.brSkinBrushContext("brSkinBrushContext1", **dic)
+    #             self.__dict__[att + "_cb"].setChecked(val)
 
-            self.updateSizeVal(size)
-            self.updateStrengthVal(strength)
-            nmBtn = self.commandArray[commandIndex] + "_btn"
-            self.__dict__[nmBtn].setChecked(True)
+    #         if soloColor: self.solo_rb.setChecked(True)
+    #         else: self.multi_rb.setChecked(True)
+    #         self.soloColor_cb.setCurrentIndex(soloColorType)
 
-            self.previousInfluenceName = influenceName
-            self.updateCurrentInfluence(influenceName)
+    #         self.updateSizeVal(size)
+    #         self.updateStrengthVal(strength)
+    #         nmBtn = self.commandArray[commandIndex] + "_btn"
+    #         self.__dict__[nmBtn].setChecked(True)
+
+    #         self.previousInfluenceName = influenceName
+    #         self.updateCurrentInfluence(influenceName)
 
 
 # -------------------------------------------------------------------------------

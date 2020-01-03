@@ -392,7 +392,7 @@ p, li { white-space: pre-wrap; }
               <string>profile :  </string>
              </property>
             </widget>
-            <widget class="QPushButton" name="gaussian_btn">
+            <widget class="QPushButton" name="curveNone_btn">
              <property name="geometry">
               <rect>
                <x>51</x>
@@ -426,7 +426,7 @@ p, li { white-space: pre-wrap; }
               <bool>true</bool>
              </property>
             </widget>
-            <widget class="QPushButton" name="poly_btn">
+            <widget class="QPushButton" name="curveLinear_btn">
              <property name="geometry">
               <rect>
                <x>73</x>
@@ -457,7 +457,7 @@ p, li { white-space: pre-wrap; }
               <bool>true</bool>
              </property>
             </widget>
-            <widget class="QPushButton" name="solid_btn">
+            <widget class="QPushButton" name="curveSmooth_btn">
              <property name="geometry">
               <rect>
                <x>95</x>
@@ -488,7 +488,7 @@ p, li { white-space: pre-wrap; }
               <bool>true</bool>
              </property>
             </widget>
-            <widget class="QPushButton" name="square_btn">
+            <widget class="QPushButton" name="curveNarrow_btn">
              <property name="geometry">
               <rect>
                <x>117</x>
