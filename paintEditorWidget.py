@@ -869,7 +869,7 @@ class SkinPaintWin(Window):
         self.delete_btn.setText("")
         # self.delete_btn.clicked.connect (self.paintEnd )
         self.delete_btn.clicked.connect(lambda: mel.eval("setToolTo $gMove;"))
-        self.delete_btn.clicked.connect(partial(self.mirrorActive_cb.setChecked, False))
+        # self.delete_btn.clicked.connect (partial (self.mirrorActive_cb.setChecked, False))
 
         self.pinSelection_btn.setIcon(_icons["pinOff"])
         self.pinSelection_btn.toggled.connect(self.changePin)
@@ -927,14 +927,15 @@ class SkinPaintWin(Window):
             thebtn = self.__dict__[nm + "_btn"]
             thebtn.setText("")
             thebtn.setIcon(_icons[nm])
+            thebtn.setToolTip(nm)
             thebtn.clicked.connect(partial(self.brSkinConn, "curve", ind))
-        self.smooth_btn.toggled.connect(self.updateOptionEnable)
-        self.sharpen_btn.toggled.connect(self.updateOptionEnable)
-        self.updateOptionEnable(True)
+        # self.smooth_btn.toggled.connect(self.updateOptionEnable)
+        # self.sharpen_btn.toggled.connect(self.updateOptionEnable)
+        # self.updateOptionEnable(True)
 
         for nm in ["lock", "refresh", "pinSelection"]:
             self.__dict__[nm + "_btn"].setText("")
-        self.uiToActivateWithPaint = ["pickVertex_btn", "pickInfluence_btn", "mirrorActive_cb"]
+        self.uiToActivateWithPaint = ["pickVertex_btn", "pickInfluence_btn"]  # , "mirrorActive_cb"]
         for btnName in self.uiToActivateWithPaint:
             self.__dict__[btnName].setEnabled(False)
         self.valueSetter = ValueSettingPE(
@@ -996,6 +997,10 @@ class SkinPaintWin(Window):
             checkBox.toggled.connect(partial(self.brSkinConn, att))
         self.colorSets_rb.toggled.connect(partial(self.brSkinConn, "useColorSetsWhilePainting"))
 
+        """
+        things that are not working yet !!!
+        """
+
     def brSkinConn(self, nm, val):
         if self.isInPaint():
             kArgs = {"edit": True}
@@ -1036,8 +1041,11 @@ class SkinPaintWin(Window):
             self.updateStrengthVal(self.strengthVarStored)
         if "commandIndex" in KArgs:
             commandIndex = int(KArgs["commandIndex"])
-            nmBtn = self.commandArray[commandIndex] + "_btn"
-            self.__dict__[nmBtn].setChecked(True)
+            commandText = self.commandArray[commandIndex]
+            self.__dict__[commandText + "_btn"].setChecked(True)
+            if commandText in ["locks", "unLocks"]:
+                self.valueSetter.setEnabled(False)
+                self.widgetAbs.setEnabled(False)
         if "curve" in KArgs:
             curveIndex = int(KArgs["curve"])
             nm = ["curveNone", "curveLinear", "curveSmooth", "curveNarrow"][curveIndex]
