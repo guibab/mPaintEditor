@@ -494,9 +494,29 @@ class SkinPaintWin(Window):
         return False
 
     def changeCommand(self, newCommand):
-        print "changeCommand"
+        commandText = self.commandArray[newCommand]
+        contextExists = cmds.brSkinBrushContext("brSkinBrushContext1", q=True, ex=True)
+        if commandText == "smooth":
+            theValue = (
+                cmds.brSkinBrushContext("brSkinBrushContext1", query=True, smoothStrength=True)
+                if contextExists
+                else self.smoothStrengthVarStored
+            )
+        elif commandText in ["lock", "unlocks"]:
+            print "disable the strength"
+        else:
+            theValue = (
+                cmds.brSkinBrushContext("brSkinBrushContext1", query=True, strength=True)
+                if contextExists
+                else self.strengthVarStored
+            )
+        try:
+            cmds.floatSliderGrp("brSkinBrushStrength", edit=True, value=theValue)
+        except:
+            pass
+        self.updateStrengthVal(theValue)
+
         if self.isInPaint():
-            # commandIndex = self.commandArray[newCommand]
             cmds.brSkinBrushContext("brSkinBrushContext1", edit=True, commandIndex=newCommand)
 
     def closeEvent(self, event):
@@ -1007,11 +1027,16 @@ class SkinPaintWin(Window):
         if "size" in KArgs:
             self.updateSizeVal(float(KArgs["size"]))
         if "strength" in KArgs:
-            self.updateStrengthVal(float(KArgs["strength"]))
+            self.strengthVarStored = float(KArgs["strength"])
+            self.updateStrengthVal(self.strengthVarStored)
         if "commandIndex" in KArgs:
             commandIndex = int(KArgs["commandIndex"])
             nmBtn = self.commandArray[commandIndex] + "_btn"
             self.__dict__[nmBtn].setChecked(True)
+        if "smoothStrength" in KArgs:
+            self.smoothStrengthVarStored = float(KArgs["smoothStrength"])
+            if self.smooth_btn.isChecked():
+                self.updateStrengthVal(self.smoothStrengthVarStored)
         if "influenceName" in KArgs:
             jointName = KArgs["influenceName"]
             self.previousInfluenceName = jointName
