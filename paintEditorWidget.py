@@ -170,15 +170,15 @@ QPushButton:pressed {
     color:white;
     border-style: inset;
 }
-QGroupBox{
-    background-color: #aba8a6;
-    color : black;
-    border :0 px; 
+QGroupBox {
+    background-color:  #aba8a6;
+    border: 1px solid grey;
+    margin-top: 1ex; /* leave space at the top for the title */
 }
-QGroupBox::checked{
-    background-color: #aba8a6;
-    color : black;
-    border : 1px solid rgb(120, 120, 120); 
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    padding: 0 3px;
 }
 QGroupBox::indicator {
     width: 0px;
@@ -487,6 +487,13 @@ class SkinPaintWin(Window):
                 return ind
         return -1
 
+    def getEnabledButton(self):
+        for ind, nm in enumerate(self.commandArray):
+            thebtn = self.__dict__[nm + "_btn"]
+            if thebtn.isChecked():
+                return nm
+        return False
+
     def changeCommand(self, newCommand):
         print "changeCommand"
         if self.isInPaint():
@@ -612,8 +619,8 @@ class SkinPaintWin(Window):
 
     def updateOptionEnable(self, toggleValue):
         setOn = self.smooth_btn.isChecked() or self.sharpen_btn.isChecked()
-        for btn in [self.repeatBTN, self.depthBTN]:
-            btn.setEnabled(setOn)
+        # for btn in [self.repeatBTN, self.depthBTN]:
+        #     btn.setEnabled (setOn)
 
     def upateSoloModeRBs(self, val):
         if val:
@@ -845,31 +852,10 @@ class SkinPaintWin(Window):
         self.searchInfluences_le.textChanged.connect(self.filterInfluences)
         self.solo_rb.toggled.connect(self.changeMultiSolo)
 
-        self.repeatBTN = ButtonWithValue(
-            self.buttonWidg,
-            usePow=False,
-            name="iter",
-            minimumValue=1,
-            defaultValue=1,
-            step=1,
-            clickable=False,
-            minHeight=20,
-            addSpace=False,
-        )
-        self.depthBTN = ButtonWithValue(
-            self.buttonWidg,
-            usePow=False,
-            name="dpth",
-            minimumValue=1,
-            maximumValue=9,
-            defaultValue=1,
-            step=1,
-            clickable=False,
-            minHeight=20,
-            addSpace=False,
-        )
-        self.smoothOption_lay.addWidget(self.repeatBTN)
-        self.smoothOption_lay.addWidget(self.depthBTN)
+        # self.repeatBTN = ButtonWithValue (self.buttonWidg, usePow = False, name = "iter", minimumValue = 1,  defaultValue = 1, step = 1, clickable=False, minHeight=20, addSpace = False)
+        # self.depthBTN = ButtonWithValue (self.buttonWidg, usePow = False, name = "dpth", minimumValue = 1, maximumValue = 9, defaultValue = 1, step = 1, clickable=False, minHeight=20, addSpace = False)
+        # self.smoothOption_lay.addWidget (self.repeatBTN )
+        # self.smoothOption_lay.addWidget (self.depthBTN)
 
         # self.mirrorActive_cb.toggled.connect (self.toggleMirror)
         # self.mirrorActive_cb.toggled.connect (self.checkIfSameValue)
@@ -966,9 +952,22 @@ class SkinPaintWin(Window):
         dialogLayout.insertSpacing(1, 10)
         cmds.evalDeferred(self.fixUI)
 
-        self.scrollAreaWidgetContents.layout().setContentsMargins(20, 20, 20, 20)
+        self.scrollAreaWidgetContents.layout().setContentsMargins(9, 9, 9, 9)
         sz = self.splitter.sizes()
         self.splitter.setSizes([sz[0] + sz[1], 0])
+
+        self.drawManager_rb.toggled.connect(self.drawManager_gb.setEnabled)
+
+        for att in ["meshdrawTriangles", "meshdrawEdges", "meshdrawPoints", "meshdrawTransparency"]:
+            checkBox = self.__dict__[att + "_cb"]
+            checkBox.toggled.connect(partial(self.brSkinConn, att))
+        self.colorSets_rb.toggled.connect(partial(self.brSkinConn, "useColorSetsWhilePainting"))
+
+    def brSkinConn(self, nm, val):
+        if self.isInPaint():
+            kArgs = {"edit": True}
+            kArgs[nm] = val
+            cmds.brSkinBrushContext("brSkinBrushContext1", **kArgs)
 
     def displayOptions(self, val):
         sz = self.splitter.sizes()
@@ -976,7 +975,10 @@ class SkinPaintWin(Window):
         if sz[1] != 0:
             self.splitter.setSizes([sumSizes, 0])
         else:
-            self.splitter.setSizes([sumSizes - 150, 150])
+            if sumSizes > 400:
+                self.splitter.setSizes([sumSizes - 400, 400])
+            else:
+                self.splitter.setSizes([0, sumSizes])
 
     def fixUI(self):
         for nm in self.commandArray:
@@ -1006,6 +1008,16 @@ class SkinPaintWin(Window):
             jointName = KArgs["influenceName"]
             self.previousInfluenceName = jointName
             self.updateCurrentInfluence(jointName)
+        if "useColorSetsWhilePainting" in KArgs:
+            val = int(KArgs["useColorSetsWhilePainting"])
+            if val:
+                self.colorSets_rb.setChecked(True)
+            else:
+                self.drawManager_rb.setChecked(True)
+        for att in ["meshdrawTriangles", "meshdrawEdges", "meshdrawPoints", "meshdrawTransparency"]:
+            if att in KArgs:
+                val = bool(KArgs[att])
+                self.__dict__[att + "_cb"].setChecked(val)
 
     def clearInputText(self):
         self.searchInfluences_le.clear()

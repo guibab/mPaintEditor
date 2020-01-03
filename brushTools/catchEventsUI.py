@@ -293,7 +293,6 @@ class CatchEventsWidget(QtWidgets.QWidget):
                 listModelPanelsCompatsPrts = [el.parent() for el in listModelPanelsCompats]
                 # ptr = OpenMayaUI.MQtUtil.findControl(listModelPanels [0])
                 # model_panel_4 = QtCompat.wrapInstance(long(ptr), QtWidgets.QWidget)
-
                 if res is obj:
                     print "ViewPort"
                 elif res is self.mainMaya:
