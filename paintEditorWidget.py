@@ -929,6 +929,7 @@ class SkinPaintWin(Window):
             thebtn.setIcon(_icons[nm])
             thebtn.setToolTip(nm)
             thebtn.clicked.connect(partial(self.brSkinConn, "curve", ind))
+        self.flood_btn.clicked.connect(partial(self.brSkinConn, "flood", True))
         # self.smooth_btn.toggled.connect(self.updateOptionEnable)
         # self.sharpen_btn.toggled.connect(self.updateOptionEnable)
         # self.updateOptionEnable(True)
