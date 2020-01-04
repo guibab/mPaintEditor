@@ -313,6 +313,22 @@ p, li { white-space: pre-wrap; }
               <number>0</number>
              </property>
              <item>
+              <widget class="QCheckBox" name="ignoreLock_cb">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="layoutDirection">
+                <enum>Qt::RightToLeft</enum>
+               </property>
+               <property name="text">
+                <string>ignore dfm  Locks</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
               <spacer name="horizontalSpacer_10">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>

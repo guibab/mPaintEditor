@@ -937,7 +937,11 @@ class SkinPaintWin(Window):
 
         for nm in ["lock", "refresh", "pinSelection"]:
             self.__dict__[nm + "_btn"].setText("")
-        self.uiToActivateWithPaint = ["pickVertex_btn", "pickInfluence_btn"]  # , "mirrorActive_cb"]
+        self.uiToActivateWithPaint = [
+            "pickVertex_btn",
+            "pickInfluence_btn",
+            "flood_btn",
+        ]  # , "mirrorActive_cb"]
         for btnName in self.uiToActivateWithPaint:
             self.__dict__[btnName].setEnabled(False)
         self.valueSetter = ValueSettingPE(
@@ -993,6 +997,7 @@ class SkinPaintWin(Window):
             "coverage",
             "postSetting",
             "message",
+            "ignoreLock",
         ]
         for att in self.listCheckBoxesDirectAction:
             checkBox = self.__dict__[att + "_cb"]
