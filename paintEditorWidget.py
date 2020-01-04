@@ -1015,13 +1015,14 @@ class SkinPaintWin(Window):
             cmds.brSkinBrushContext("brSkinBrushContext1", **kArgs)
 
     def displayOptions(self, val):
+        heightOption = 410
         sz = self.splitter.sizes()
         sumSizes = sz[0] + sz[1]
         if sz[1] != 0:
             self.splitter.setSizes([sumSizes, 0])
         else:
-            if sumSizes > 400:
-                self.splitter.setSizes([sumSizes - 400, 400])
+            if sumSizes > heightOption:
+                self.splitter.setSizes([sumSizes - heightOption, heightOption])
             else:
                 self.splitter.setSizes([0, sumSizes])
 
