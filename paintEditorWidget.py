@@ -1003,7 +1003,7 @@ class SkinPaintWin(Window):
             checkBox = self.__dict__[att + "_cb"]
             checkBox.toggled.connect(partial(self.brSkinConn, att))
         self.colorSets_rb.toggled.connect(partial(self.brSkinConn, "useColorSetsWhilePainting"))
-
+        self.smoothRepeat_spn.valueChanged.connect(partial(self.brSkinConn, "smoothRepeat"))
         """
         things that are not working yet !!!
         """
@@ -1072,6 +1072,9 @@ class SkinPaintWin(Window):
                 self.colorSets_rb.setChecked(True)
             else:
                 self.drawManager_rb.setChecked(True)
+        if "smoothRepeat" in KArgs:
+            val = int(KArgs["smoothRepeat"])
+            self.smoothRepeat_spn.setValue(val)
         for att in self.listCheckBoxesDirectAction:
             if att in KArgs:
                 val = bool(int(KArgs[att]))
