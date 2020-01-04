@@ -11,7 +11,6 @@ import blurdev
 from blurdev.gui import Window
 import os
 import re
-import random
 import numpy as np
 from studio.gui.resource import Icons
 from mWeightEditor.tools.skinData import DataOfSkin
@@ -27,8 +26,12 @@ from mWeightEditor.tools.utils import (
 
 # from tools.brushFunctions import BrushFunctions
 from brushTools.catchEventsUI import CatchEventsWidget, rootWindow
-from brushTools.brushPythonFunctions import setColorsOnJoints, fixOptionVarContext
-from brushTools import brushPythonFunctions
+from brushTools.brushPythonFunctions import (
+    setColorsOnJoints,
+    fixOptionVarContext,
+    generate_new_color,
+    deleteExistingColorSets,
+)
 
 
 class ValueSettingPE(ValueSetting):
@@ -812,7 +815,7 @@ class SkinPaintWin(Window):
                     cmds.evalDeferred(self.selectRefresh)
 
     def randomColors(self):
-        self.delete_btn.click()
+        # self.delete_btn.click()
 
         golden_ratio_conjugate = 0.618033988749895
         s, v = 0.5, 0.95
@@ -831,6 +834,8 @@ class SkinPaintWin(Window):
 
             # print ind,nm, values
             item.setColor(values)
+        if self.isInPaint():
+            cmds.brSkinBrushContext("brSkinBrushContext1", e=True, refresh=True)
         # cmds.confirmDialog (m="randomColors")
 
     def createWindow(self):
@@ -858,9 +863,7 @@ class SkinPaintWin(Window):
         self.refresh_btn.clicked.connect(self.refreshBtn)
         self.enterPaint_btn.clicked.connect(self.enterPaint)
 
-        self.deleteExisitingColorSets_btn.clicked.connect(
-            brushPythonFunctions.deleteExistingColorSets
-        )
+        self.deleteExisitingColorSets_btn.clicked.connect(deleteExistingColorSets)
 
         self.showLocks_btn.setIcon(_icons["eye"])
         self.showLocks_btn.toggled.connect(self.showHideLocks)

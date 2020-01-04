@@ -1,7 +1,9 @@
 from maya import cmds, mel
 import re
-import time, datetime
+import time
+import datetime
 from collections import OrderedDict
+import random
 
 """
 import brSkinBrush_pythonFunctions
