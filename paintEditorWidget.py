@@ -567,6 +567,7 @@ class SkinPaintWin(Window):
                 nm = "1/2"
             newBtn = QtWidgets.QPushButton(nm)
             newBtn.clicked.connect(partial(self.updateStrengthVal, theVal / 100.0))
+            newBtn.clicked.connect(self.valueSetter.postSet)
             carryWidgLayoutlayout.addWidget(newBtn)
         theCarryWidget.setMaximumSize(self.maxWidthCentralWidget, 14)
 
@@ -1253,7 +1254,7 @@ class SkinPaintWin(Window):
                 foundText = False
                 for txt in newTexts:
                     txt = txt.replace("*", ".*")
-                    foundText = re.search(txt, nm, re.IGNORECASE) != None
+                    foundText = re.search(txt, nm, re.IGNORECASE) is not None
                     if foundText:
                         break
                 it.setHidden(not foundText)
