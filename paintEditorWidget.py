@@ -889,7 +889,7 @@ class SkinPaintWin(Window):
         self.searchInfluences_le.textChanged.connect(self.filterInfluences)
         self.solo_rb.toggled.connect(self.changeMultiSolo)
 
-        # self.repeatBTN = ButtonWithValue (self.buttonWidg, usePow = False, name = "iter", minimumValue = 1,  defaultValue = 1, step = 1, clickable=False, minHeight=20, addSpace = False)
+        # self.repeatBTN = ButtonWithValue (self.buttonWidg, usePow = False, name = "iter", minimumValue = 1, defaultValue = 1, step = 1, clickable=False, minHeight=20, addSpace = False)
         # self.depthBTN = ButtonWithValue (self.buttonWidg, usePow = False, name = "dpth", minimumValue = 1, maximumValue = 9, defaultValue = 1, step = 1, clickable=False, minHeight=20, addSpace = False)
         # self.smoothOption_lay.addWidget (self.repeatBTN )
         # self.smoothOption_lay.addWidget (self.depthBTN)
@@ -1352,10 +1352,15 @@ class SkinPaintWin(Window):
             "size": self.sizeBrushSetter.theSpinner.value(),
             "strength": self.valueSetter.theSpinner.value() * 0.01,
             "commandIndex": self.getCommandIndex(),
+            "useColorSetsWhilePainting": self.colorSets_rb.isChecked(),
+            "smoothRepeat": self.smoothRepeat_spn.value(),
         }
         selectedInfluences = self.selectedInfluences()
         if selectedInfluences:
             dicValues["influenceName"] = selectedInfluences[0]
+        for att in self.listCheckBoxesDirectAction:
+            checkBox = self.__dict__[att + "_cb"]
+            dicValues[att] = checkBox.isChecked()
         cmds.brSkinBrushContext("brSkinBrushContext1", **dicValues)
         # self.checkCorrectUI()
 
