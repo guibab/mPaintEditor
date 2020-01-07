@@ -997,6 +997,9 @@ class SkinPaintWin(Window):
             checkBox.toggled.connect(partial(self.brSkinConn, att))
         self.colorSets_rb.toggled.connect(partial(self.brSkinConn, "useColorSetsWhilePainting"))
         self.smoothRepeat_spn.valueChanged.connect(partial(self.brSkinConn, "smoothRepeat"))
+
+        self.maxColor_sb.valueChanged.connect(partial(self.brSkinConn, "maxColor"))
+        self.minColor_sb.valueChanged.connect(partial(self.brSkinConn, "minColor"))
         """
         things that are not working yet !!!
         """
@@ -1069,6 +1072,12 @@ class SkinPaintWin(Window):
         if "smoothRepeat" in KArgs:
             val = int(KArgs["smoothRepeat"])
             self.smoothRepeat_spn.setValue(val)
+        if "minColor" in KArgs:
+            val = float(KArgs["minColor"])
+            self.minColor_sb.setValue(val)
+        if "maxColor" in KArgs:
+            val = float(KArgs["maxColor"])
+            self.maxColor_sb.setValue(val)
         for att in self.listCheckBoxesDirectAction:
             if att in KArgs:
                 val = bool(int(KArgs[att]))
@@ -1345,6 +1354,8 @@ class SkinPaintWin(Window):
             "commandIndex": self.getCommandIndex(),
             "useColorSetsWhilePainting": self.colorSets_rb.isChecked(),
             "smoothRepeat": self.smoothRepeat_spn.value(),
+            "maxColor": self.maxColor_sb.value(),
+            "minColor": self.minColor_sb.value(),
         }
         selectedInfluences = self.selectedInfluences()
         if selectedInfluences:
