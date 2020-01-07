@@ -305,9 +305,8 @@ def closeEventCatcher():
 
     if hasattr(catchEventsUI, "EVENTCATCHER"):
         catchEventsUI.EVENTCATCHER.close()
-    # print "toolOnSetupStart"
-    """    
-        mel.eval ("setToolTo $gMove;")    
+    """
+        mel.eval ("setToolTo $gMove;")
     """
 
 
