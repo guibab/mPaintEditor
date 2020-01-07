@@ -157,6 +157,16 @@ QWidget:disabled {
     font:italic;
     color:grey;
 }
+QSplitter::handle {
+    border-radius: 5px;
+    border: 1px solid gray;
+    background-color:  #bfbcba;
+}
+QSplitter::handle::hover {
+    border-radius: 5px;
+    border: 1px solid lightGray; 
+    background-color:  gray;
+}
 QLineEdit{
     background-color:  #bfbcba;
     color:black;
