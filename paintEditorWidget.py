@@ -207,56 +207,24 @@ QComboBox{
 }
 """
 
-
-class HelpWidget(QtWidgets.QTreeWidget):
-    def __init__(self, mainWindow):
-        self.mainWindow = mainWindow
-        super(HelpWidget, self).__init__(rootWindow())
-        self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
-        self.setStyleSheet(styleSheet)
-        self.setColumnCount(2)
-        self.header().hide()
-        self.setWindowModality(QtCore.Qt.ApplicationModal)
-
-        # self.setStyleSheet("margin-left: 0px; border-radius: 25px; background: yellow; color: black; border: 1px solid black;")
-        nb = self.populate() - 1
-        self.setColumnWidth(0, 150)
-        self.resizeColumnToContents(1)
-        self.resize(250, nb * 15)
-
-        self.closeBtn = QtWidgets.QPushButton("X", self)
-        self.closeBtn.resize(20, 20)
-        self.closeBtn.move(225, 5)
-        self.closeBtn.clicked.connect(self.close)
-
-    def close(self):
-        self.mainWindow.setEnabled(True)
-        super(HelpWidget, self).close()
-
-    def populate(self):
-        lstShortCuts = [
-            ("Smooth ", "SHIFT"),
-            ("Remove ", "CTRL"),
-            ("markingMenu ", "0"),
-            ("pick Vertex ", "ALT + D"),
-            ("pick influence", "D"),
-            ("Toggle Mirror Mode", "ALT + M"),
-            ("Toggle Solo Mode", "ALT + S"),
-            ("Toggle Wireframe", "ALT + W"),
-            ("Toggle Xray", "ALT + X"),
-            ("Undo", "CTRL + Z"),
-            ("update Value", "N"),
-        ]
-        for nm1, nm2 in lstShortCuts:
-            helpItem = QtWidgets.QTreeWidgetItem()
-            helpItem.setText(0, nm1)
-            helpItem.setText(1, nm2)
-            self.addTopLevelItem(helpItem)
-        return len(lstShortCuts)
-
-    # def mousePressEvent (self, *args):
-    #    self.close()
-
+lstShortCuts = [
+    ("Remove ", "Shift + LMB"),
+    ("Smooth", "Ctrl + LMB"),
+    ("Size", "MMB left right"),
+    ("Strength", "MMB up down"),
+    ("Fine Strength Size", "Ctrl + MMB"),
+    ("markingMenu ", "U"),
+    ("pick influence", "D"),
+    ("pick Vertex ", "ALT + D"),
+    ("Toggle Mirror Mode", "ALT + M"),
+    ("Toggle Solo Mode", "ALT + S"),
+    ("Toggle Wireframe", "ALT + W"),
+    ("Toggle Xray", "ALT + X"),
+    ("Flood", "ALT + F"),
+    ("Undo", "CTRL + Z"),
+    ("Quit", "Escape or Q"),
+    # ("update Value", "N"),
+]
 
 ###################################################################################
 #
@@ -291,6 +259,7 @@ class SkinPaintWin(Window):
         self.dataOfSkin.softOn = False
 
         self.createWindow()
+        self.addShortCutsHelp()
 
         self.setStyleSheet(styleSheet)
         self.setWindowDisplay()
@@ -301,7 +270,18 @@ class SkinPaintWin(Window):
         self.uiInfluenceTREE.clear()
         self.refresh()
 
-        self.theHelpWidget = HelpWidget(self)
+    def addShortCutsHelp(self):
+        for nm1, nm2 in lstShortCuts:
+            helpItem = QtWidgets.QTreeWidgetItem()
+            helpItem.setText(0, nm2)
+            helpItem.setText(1, nm1)
+            self.shortCut_Tree.addTopLevelItem(helpItem)
+        self.shortCut_Tree.setStyleSheet(
+            "QTreeWidget::item { padding-right:5px;padding-left:5px;border-right: 1px solid grey;border-bottom: 1px solid grey;}"
+        )
+        self.shortCut_Tree.setIndentation(0)
+        self.shortCut_Tree.header().hide()
+        self.shortCut_Tree.resizeColumnToContents(0)
 
     def showEvent(self, event):
         super(SkinPaintWin, self).showEvent(event)
@@ -343,11 +323,6 @@ class SkinPaintWin(Window):
         self.colorDialog.setWindowTitle("pick color")
         self.colorDialog.setWindowModality(QtCore.Qt.ApplicationModal)
 
-    def showHelp(self):
-        self.theHelpWidget.move(self.pos() + QtCore.QPoint(0.5 * (self.width() - 250 + 10), 40))
-        self.setEnabled(False)
-        self.theHelpWidget.show()
-
     def buildRCMenu(self):
         self.mainPopMenu = QtWidgets.QMenu(self)
         self.subMenuSoloColor = self.mainPopMenu.addMenu("solo color")
@@ -361,7 +336,6 @@ class SkinPaintWin(Window):
             act = self.subMenuSoloColor.addAction(colType, theFn)
             act.setCheckable(True)
             act.setChecked(soloColorIndex == ind)
-        self.mainPopMenu.addAction("help", self.showHelp)
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showMainMenu)
 
@@ -1024,7 +998,7 @@ class SkinPaintWin(Window):
             cmds.brSkinBrushContext("brSkinBrushContext1", **kArgs)
 
     def displayOptions(self, val):
-        heightOption = 410
+        heightOption = 480
         sz = self.splitter.sizes()
         sumSizes = sz[0] + sz[1]
         if sz[1] != 0:
@@ -1313,7 +1287,7 @@ class SkinPaintWin(Window):
             self.uiInfluenceTREE.clear()
             self.uiInfluenceTREE.dicWidgName = {}
 
-            if not self.dataOfSkin.shapePath:
+            if not hasattr(self.dataOfSkin, "shapePath"):
                 return
             isPaintable = self.dataOfSkin.shapePath.apiType() == OpenMaya.MFn.kMesh
             for uiObj in [

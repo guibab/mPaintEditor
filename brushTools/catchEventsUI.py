@@ -447,9 +447,15 @@ class CatchEventsWidget(QtWidgets.QWidget):
                     toggleSoloMode()
                     event.ignore()
                     return True
+                if event.key() == QtCore.Qt.Key_F:
+                    print "FLOOD"
+                    cmds.brSkinBrushContext("brSkinBrushContext1", edit=True, flood=True)
+                    event.ignore()
+                    return True
                 if event.key() == QtCore.Qt.Key_M:
                     print "mirror active"
-                    # self.mainWindow.mirrorActive_cb.toggle()
+                    callPaintEditorFunction("mirrorActive_cb").toggle()
+                    # self.mainWindow.mirrorActive_cb
                     event.ignore()
                     return True
             return super(CatchEventsWidget, self).eventFilter(obj, event)
