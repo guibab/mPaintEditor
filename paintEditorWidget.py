@@ -1042,7 +1042,10 @@ class SkinPaintWin(Window):
             self.updateSizeVal(float(KArgs["size"]))
         if "strength" in KArgs:
             self.strengthVarStored = float(KArgs["strength"])
-            self.updateStrengthVal(self.strengthVarStored)
+        else:
+            self.strengthVarStored = 1.0
+        self.updateStrengthVal(self.strengthVarStored)
+
         if "commandIndex" in KArgs:
             commandIndex = int(KArgs["commandIndex"])
             commandText = self.commandArray[commandIndex]
@@ -1057,8 +1060,10 @@ class SkinPaintWin(Window):
             thebtn.setChecked(True)
         if "smoothStrength" in KArgs:
             self.smoothStrengthVarStored = float(KArgs["smoothStrength"])
-            if self.smooth_btn.isChecked():
-                self.updateStrengthVal(self.smoothStrengthVarStored)
+        else:
+            self.smoothStrengthVarStored = 1.0
+        if self.smooth_btn.isChecked():
+            self.updateStrengthVal(self.smoothStrengthVarStored)
         if "influenceName" in KArgs:
             jointName = KArgs["influenceName"]
             self.previousInfluenceName = jointName
@@ -1256,6 +1261,10 @@ class SkinPaintWin(Window):
                 item.setHidden(not self.showZeroDeformers and item.isZeroDfm)
 
     def refreshBtn(self):
+        self.dataOfSkin = DataOfSkin(
+            useShortestNames=self.useShortestNames, createDisplayLocator=False
+        )
+        self.dataOfSkin.softOn = False
         self.refresh(force=True)
 
     def selectRefresh(self):
@@ -1293,12 +1302,12 @@ class SkinPaintWin(Window):
             self.refresh()
 
     def refresh(self, force=False, renamedCalled=False):
-        # print "refresh CALLED"
+        print "refresh CALLED ", force
         with GlobalContext(message="paintEditor getAllData", doPrint=False):
             resultData = self.dataOfSkin.getAllData(
                 displayLocator=False, getskinWeights=True, force=force
             )
-        if renamedCalled or resultData:
+        if renamedCalled or resultData or force:
             # print "- refreshing -"
 
             # self.brushFunctions.setColorsOnJoints ()
