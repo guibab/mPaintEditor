@@ -991,6 +991,7 @@ class SkinPaintWin(Window):
             "postSetting",
             "message",
             "ignoreLock",
+            "verbose",
         ]
         for att in self.listCheckBoxesDirectAction:
             checkBox = self.__dict__[att + "_cb"]
@@ -1038,8 +1039,11 @@ class SkinPaintWin(Window):
                 self.multi_rb.setChecked(True)
         if "soloColorType" in KArgs:
             self.soloColor_cb.setCurrentIndex(int(KArgs["soloColorType"]))
+        sizeVal = 4.0
         if "size" in KArgs:
-            self.updateSizeVal(float(KArgs["size"]))
+            sizeVal = float(KArgs["size"])
+        self.updateSizeVal(sizeVal)
+
         if "strength" in KArgs:
             self.strengthVarStored = float(KArgs["strength"])
         else:

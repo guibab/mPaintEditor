@@ -1047,7 +1047,7 @@ p, li { white-space: pre-wrap; }
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>0</y>
+          <y>-299</y>
           <width>247</width>
           <height>633</height>
          </rect>
@@ -1302,7 +1302,7 @@ p, li { white-space: pre-wrap; }
                      <string>Triangles</string>
                     </property>
                     <property name="checked">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </property>
                    </widget>
                   </item>
@@ -1317,6 +1317,9 @@ p, li { white-space: pre-wrap; }
                    <widget class="QCheckBox" name="meshdrawEdges_cb">
                     <property name="text">
                      <string>Edges</string>
+                    </property>
+                    <property name="checked">
+                     <bool>false</bool>
                     </property>
                    </widget>
                   </item>
@@ -1347,6 +1350,9 @@ p, li { white-space: pre-wrap; }
                 <widget class="QCheckBox" name="drawBrush_cb">
                  <property name="text">
                   <string>Draw Brush in paint</string>
+                 </property>
+                 <property name="checked">
+                  <bool>false</bool>
                  </property>
                 </widget>
                </item>
@@ -1468,7 +1474,7 @@ p, li { white-space: pre-wrap; }
                   <string>in View Messages</string>
                  </property>
                  <property name="checked">
-                  <bool>false</bool>
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
@@ -1493,6 +1499,13 @@ p, li { white-space: pre-wrap; }
                 </property>
                 <property name="autoExclusive">
                  <bool>false</bool>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="verbose_cb">
+                <property name="text">
+                 <string>debug Verbose</string>
                 </property>
                </widget>
               </item>
