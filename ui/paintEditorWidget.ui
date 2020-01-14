@@ -1047,9 +1047,9 @@ p, li { white-space: pre-wrap; }
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>-299</y>
+          <y>-296</y>
           <width>247</width>
-          <height>633</height>
+          <height>653</height>
          </rect>
         </property>
         <layout class="QGridLayout" name="gridLayout_7">
@@ -1467,11 +1467,31 @@ p, li { white-space: pre-wrap; }
               <property name="title">
                <string>extra options</string>
               </property>
-              <layout class="QVBoxLayout" name="verticalLayout_4">
-               <item>
+              <layout class="QGridLayout" name="gridLayout_4">
+               <property name="spacing">
+                <number>3</number>
+               </property>
+               <item row="0" column="0" colspan="2">
                 <widget class="QCheckBox" name="message_cb">
                  <property name="text">
                   <string>in View Messages</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QCheckBox" name="verbose_cb">
+                 <property name="text">
+                  <string>debug Verbose</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QCheckBox" name="wireframe_cb">
+                 <property name="text">
+                  <string>wireframe</string>
                  </property>
                  <property name="checked">
                   <bool>true</bool>
@@ -1499,13 +1519,6 @@ p, li { white-space: pre-wrap; }
                 </property>
                 <property name="autoExclusive">
                  <bool>false</bool>
-                </property>
-               </widget>
-              </item>
-              <item>
-               <widget class="QCheckBox" name="verbose_cb">
-                <property name="text">
-                 <string>debug Verbose</string>
                 </property>
                </widget>
               </item>

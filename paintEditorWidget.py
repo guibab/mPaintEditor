@@ -1001,9 +1001,15 @@ class SkinPaintWin(Window):
 
         self.maxColor_sb.valueChanged.connect(partial(self.brSkinConn, "maxColor"))
         self.minColor_sb.valueChanged.connect(partial(self.brSkinConn, "minColor"))
+
+        self.wireframe_cb.toggled.connect(self.wireframeToggle)
         """
         things that are not working yet !!!
         """
+
+    def wireframeToggle(self, val):
+        if not val and cmds.objExists("SkinningWireframe"):
+            cmds.delete("SkinningWireframe")
 
     def brSkinConn(self, nm, val):
         if self.isInPaint():

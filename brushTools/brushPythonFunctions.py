@@ -354,6 +354,10 @@ def escapePressed():
 
 
 def addWireFrameToMesh():
+    wireframeCB = callPaintEditorFunction("wireframe_cb")
+    if wireframeCB and not wireframeCB.isChecked():
+        print "no wireframe"
+        return
     theMesh = cmds.ls(sl=True, tr=True)[0]  # getMeshTransfrom()
     # print currentContext, theMesh
     createWireframe(theMesh)
