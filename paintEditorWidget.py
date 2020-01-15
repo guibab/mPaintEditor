@@ -32,6 +32,7 @@ from brushTools.brushPythonFunctions import (
     generate_new_color,
     deleteExistingColorSets,
     setSoloMode,
+    reloadSkin,
 )
 
 
@@ -1005,6 +1006,8 @@ class SkinPaintWin(Window):
         self.minColor_sb.valueChanged.connect(partial(self.brSkinConn, "minColor"))
 
         self.wireframe_cb.toggled.connect(self.wireframeToggle)
+        self.WarningFixSkin_btn.setVisible(False)
+        self.WarningFixSkin_btn.clicked.connect(self.fixSparseArray)
         """
         things that are not working yet !!!
         """
@@ -1314,7 +1317,7 @@ class SkinPaintWin(Window):
             self.refresh()
 
     def refresh(self, force=False, renamedCalled=False):
-        print "refresh CALLED ", force
+        # print "refresh CALLED ", force
         with GlobalContext(message="paintEditor getAllData", doPrint=False):
             resultData = self.dataOfSkin.getAllData(
                 displayLocator=False, getskinWeights=True, force=force
@@ -1353,6 +1356,27 @@ class SkinPaintWin(Window):
                 jointItem.isZeroDfm = ind in self.dataOfSkin.hideColumnIndices
                 jointItem.setHidden(not self.showZeroDeformers and jointItem.isZeroDfm)
             self.updateCurrentInfluence(self.previousInfluenceName)
+        self.updateWarningBtn()
+
+    def fixSparseArray(self):
+        if self.isInPaint():
+            mel.eval("setToolTo $gMove;")
+        with GlobalContext(message="fix Sparse Array", doPrint=False):
+            prevSelection = cmds.ls(sl=True)
+            skn = self.dataOfSkin.theSkinCluster
+            if skn and cmds.objExists(skn):
+                reloadSkin(skn)
+                self.refresh(force=True)
+                cmds.select(prevSelection)
+
+    def updateWarningBtn(self):
+        skn = self.dataOfSkin.theSkinCluster
+        if skn and cmds.objExists(skn):
+            matIndices = cmds.getAttr("{}.matrix".format(skn), mi=True)
+            sparseArray = len(matIndices) != max(matIndices) + 1
+        else:
+            sparseArray = False
+        self.WarningFixSkin_btn.setVisible(sparseArray)
 
     def paintEnd(self):  # called by the brush
         for btnName in self.uiToActivateWithPaint:

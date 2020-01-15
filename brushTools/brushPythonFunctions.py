@@ -5,6 +5,12 @@ import datetime
 from collections import OrderedDict
 import random
 
+
+from dcc.maya.skinCluster import getFastData
+import maya.OpenMaya as om
+import maya.OpenMayaAnim as oma
+from pymel.core import PyNode
+
 """
 import brSkinBrush_pythonFunctions
 reload (brSkinBrush_pythonFunctions)
@@ -336,7 +342,7 @@ def closeEventCatcher():
     """
 
 
-def toolOnSetupEnd():
+def toolOnSetupEndDeferred():
     with disableUndoContext():
         addWireFrameToMesh()
         cmds.select(clear=True)
@@ -352,6 +358,11 @@ def toolOnSetupEnd():
 
         callPaintEditorFunction("paintStart")
         print "----- load BRUSH for {} in  [{:.2f} secs] ------".format(mshShape, completionTime)
+
+
+def toolOnSetupEnd():
+    toolOnSetupEndDeferred()
+    # cmds.evalDeferred(toolOnSetupEndDeferred)
 
 
 def toolOffCleanup():
@@ -504,6 +515,76 @@ def deleteExistingColorSets():
         for colSet in ["multiColorsSet", "multiColorsSet2", "soloColorsSet", "soloColorsSet2"]:
             if colSet in existingColorSets:
                 cmds.polyColorSet(obj, delete=True, colorSet=colSet)
+
+
+"""
+matIndices =cmds.getAttr ("{}.matrix".format (newSkinName), mi=True) 
+len (matIndices ) != max (matIndices )+1
+"""
+
+
+def reloadSkin(skinClusterName):
+    sknFn, shapePath, fullComponent, nbDrivers, influencesIndices = getFastData(
+        skinClusterName, indices=None, shapePathIndex=0
+    )
+    weights = om.MDoubleArray()
+
+    intptrUtil = om.MScriptUtil()
+    intptrUtil.createFromInt(0)
+    intPtr = intptrUtil.asUintPtr()
+
+    sknFn.getWeights(shapePath, fullComponent, weights, intPtr)
+
+    listBindPreMat = {}
+    listInfluenceColor = {}
+    for influenceName, influencesIndex in influencesIndices.iteritems():
+        bindPreAtt = "{}.bindPreMatrix[{}]".format(skinClusterName, influencesIndex)
+        bindPreConn = cmds.listConnections(bindPreAtt, s=True, d=False, p=True)
+        if bindPreConn:
+            listBindPreMat[influenceName] = bindPreConn[0]
+        else:
+            listBindPreMat[influenceName] = PyNode(bindPreAtt).get()
+        influenceColorAtt = "{}.influenceColor[{}]".format(skinClusterName, influencesIndex)
+        influenceColorConn = cmds.listConnections(influenceColorAtt, s=True, d=False, p=True)
+        if influenceColorConn:
+            listInfluenceColor[influenceName] = influenceColorConn[0]
+        else:
+            listInfluenceColor[influenceName] = PyNode(influenceColorAtt).get()
+    geometries = cmds.skinCluster(skinClusterName, q=True, geometry=True)
+    lstInfluences = cmds.skinCluster(skinClusterName, q=True, influence=True)
+
+    # that's the get part------------------------------------------
+
+    cmds.delete(skinClusterName)
+    # recreate the skin -----------------------------------
+    newSkinName = cmds.skinCluster(
+        lstInfluences + geometries, toSelectedBones=True, includeHiddenSelections=False
+    )[0]
+    sknFnNew, shapePathNew, fullComponentNew, nbDriversNew, influencesIndicesNew = getFastData(
+        newSkinName, indices=None, shapePathIndex=0
+    )
+
+    # reset the weights
+    undoValues = om.MDoubleArray()
+    tmpInflInd = range(len(lstInfluences))
+    tmpInflInd = om.MIntArray(len(lstInfluences))
+    for i in range(len(lstInfluences)):
+        tmpInflInd.set(i, i)
+    sknFnNew.setWeights(shapePathNew, fullComponentNew, tmpInflInd, weights, False, undoValues)
+
+    # reconnect the Atts -----------------------
+    for influenceName, influencesIndex in influencesIndicesNew.iteritems():
+        bindPreAtt = "{}.bindPreMatrix[{}]".format(newSkinName, influencesIndex)
+        bindPreValue = listBindPreMat[influenceName]
+        if isinstance(bindPreValue, unicode):
+            cmds.connectAttr(bindPreValue, bindPreAtt, f=True)
+        else:
+            PyNode(bindPreAtt).set(bindPreValue)
+        influenceColorAtt = "{}.influenceColor[{}]".format(newSkinName, influencesIndex)
+        influenceColorValue = listInfluenceColor[influenceName]
+
+        if not isinstance(influenceColorValue, unicode):
+            PyNode(influenceColorAtt).set(influenceColorValue)
 
 
 ######################### --------------CALL FROM BRUSH------------------------- ###############################################
