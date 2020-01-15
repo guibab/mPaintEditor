@@ -8,7 +8,12 @@ except:
     from PySide2.QtWidgets import QApplication, QSplashScreen, QDialog, QMainWindow
 from maya import OpenMayaUI, cmds, mel
 
-from brushPythonFunctions import callPaintEditorFunction, escapePressed, toggleSoloMode
+from brushPythonFunctions import (
+    callPaintEditorFunction,
+    escapePressed,
+    toggleSoloMode,
+    disableUndoContext,
+)
 
 # reload(brushPythonFunctions)
 
@@ -439,7 +444,8 @@ class CatchEventsWidget(QtWidgets.QWidget):
 
                     if cmds.objExists("SkinningWireframe"):
                         vis = cmds.getAttr("SkinningWireframe.v")
-                        cmds.setAttr("SkinningWireframe.v", not vis)
+                        with disableUndoContext():
+                            cmds.setAttr("SkinningWireframe.v", not vis)
                     else:
                         listModelPanels = [
                             el
