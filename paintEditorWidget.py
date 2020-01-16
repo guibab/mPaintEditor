@@ -277,7 +277,6 @@ class SkinPaintWin(Window):
         self.setStyleSheet(styleSheet)
         self.setWindowDisplay()
 
-        # self.addCallBacks ()
         self.buildRCMenu()
         self.createColorPicker()
         self.uiInfluenceTREE.clear()
@@ -451,12 +450,14 @@ class SkinPaintWin(Window):
     def addCallBacks(self):
         self.renameCallBack = addNameChangedCallback(self.renameCB)
         self.refreshSJ = cmds.scriptJob(event=["SelectionChanged", self.refreshCallBack])
-        """
-        #self.listJobEvents =[refreshSJ]
-        sceneUpdateCallback = OpenMaya.MSceneMessage.addCallback(OpenMaya.MSceneMessage.kBeforeNew, self.deselectAll )  #kSceneUpdate
+
+        sceneUpdateCallback = OpenMaya.MSceneMessage.addCallback(
+            OpenMaya.MSceneMessage.kBeforeNew, self.exitPaint
+        )
         self.close_callback = [sceneUpdateCallback]
-        self.close_callback.append (  OpenMaya.MSceneMessage.addCallback(OpenMaya.MSceneMessage.kBeforeOpen, self.deselectAll )  )
-        """
+        self.close_callback.append(
+            OpenMaya.MSceneMessage.addCallback(OpenMaya.MSceneMessage.kBeforeOpen, self.exitPaint)
+        )
 
     def deleteCallBacks(self):
         try:
@@ -466,8 +467,9 @@ class SkinPaintWin(Window):
         deleteTheJobs("SkinPaintWin.refreshCallBack")
         deleteTheJobs("SkinPaintWin.updateMirrorCB")
         cmds.scriptJob(kill=self.refreshSJ, force=True)
+        for callBck in self.close_callback:
+            OpenMaya.MSceneMessage.removeCallback(callBck)
         print "callBack deleted"
-        # for callBck in self.close_callback : OpenMaya.MSceneMessage.removeCallback(callBck)
 
     commandIndex = -1
     previousInfluenceName = ""
@@ -620,6 +622,10 @@ class SkinPaintWin(Window):
         if currentContext.startswith("brSkinBrushContext"):
             return currentContext
         return False
+
+    def exitPaint(self):
+        if self.isInPaint():
+            mel.eval("setToolTo $gMove;")
 
     def enterPaint(self):
         if not cmds.pluginInfo(" brSkinBrush", query=True, loaded=True):
@@ -870,7 +876,7 @@ class SkinPaintWin(Window):
         self.delete_btn.setIcon(_icons["del"])
         self.delete_btn.setText("")
         # self.delete_btn.clicked.connect (self.paintEnd )
-        self.delete_btn.clicked.connect(lambda: mel.eval("setToolTo $gMove;"))
+        self.delete_btn.clicked.connect(self.exitPaint)
         # self.delete_btn.clicked.connect (partial (self.mirrorActive_cb.setChecked, False))
 
         self.pinSelection_btn.setIcon(_icons["pinOff"])
