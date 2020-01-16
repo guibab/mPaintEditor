@@ -1310,10 +1310,7 @@ class SkinPaintWin(Window):
         # self.brushFunctions.setBSDAttr ( "getLockWeights", True)
 
     def refreshCallBack(self):
-        currContext = cmds.currentCtx()
-        if (
-            not self.lock_btn.isChecked()
-        ):  # and currContext != thePaintContextName  : # dont refresh for paint
+        if not self.lock_btn.isChecked():
             self.refresh()
 
     def refresh(self, force=False, renamedCalled=False):
