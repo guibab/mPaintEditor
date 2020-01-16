@@ -37,7 +37,7 @@ class disableUndoContext(object):
 
     def __enter__(self):
         if self.disableUndo:
-            cmds.undoInfo(state=False)
+            cmds.undoInfo(stateWithoutFlush=False)
         # if self.disableSoft:
         #     cmds.softSelect(e=True, softSelectEnabled=False)
         #     self.isSoftSelect = cmds.softSelect(q=True, softSelectEnabled=True)
@@ -47,7 +47,7 @@ class disableUndoContext(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Turn refresh on again and raise errors if asked"""
         if self.disableUndo:
-            cmds.undoInfo(state=True)
+            cmds.undoInfo(stateWithoutFlush=True)
         # cmds.symmetricModelling(e=True, symmetry=self.isSymetry )
         # if self.disableSoft:
         #     cmds.softSelect(e=True, softSelectEnabled=self.isSoftSelect)
@@ -378,7 +378,6 @@ def toolOffCleanupDeferred():
     # print "finishing tool\n"
     with disableUndoContext():
         closeEventCatcher()
-
         if cmds.objExists("SkinningWireframe"):
             cmds.delete("SkinningWireframe")
         # unhide previous wireFrames :
@@ -526,6 +525,11 @@ def fixOptionVarContext(**inputKargsToChange):
 def deleteExistingColorSets():
     sel = cmds.ls(sl=True)
     for obj in sel:
+        skinnedMesh_history = cmds.listHistory(obj, lv=0, pruneDagObjects=True) or []
+        cmds.setAttr(obj + ".displayColors", 0)
+        res = cmds.ls(skinnedMesh_history, type=["createColorSet", "deleteColorSet"])
+        if res:
+            cmds.delete(res)
         existingColorSets = cmds.polyColorSet(obj, q=True, allColorSets=True) or []
         for colSet in ["multiColorsSet", "multiColorsSet2", "soloColorsSet", "soloColorsSet2"]:
             if colSet in existingColorSets:
