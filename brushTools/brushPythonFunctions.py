@@ -11,6 +11,8 @@ import maya.OpenMaya as om
 import maya.OpenMayaAnim as oma
 from pymel.core import PyNode
 
+from mWeightEditor.tools.utils import GlobalContext
+
 """
 import brSkinBrush_pythonFunctions
 reload (brSkinBrush_pythonFunctions)
@@ -353,7 +355,7 @@ def closeEventCatcher():
 
 
 def toolOnSetupEndDeferred():
-    with disableUndoContext():
+    with GlobalContext(message="toolOnSetupEndDeferred", doPrint=False):
         addWireFrameToMesh()
         cmds.select(clear=True)
         currentContext = cmds.currentCtx()
@@ -376,15 +378,15 @@ def toolOnSetupEnd():
 
 
 def toolOffCleanup():
-    cmds.evalDeferred(toolOffCleanupDeferred)
+    toolOffCleanupDeferred()
 
 
 def toolOffCleanupDeferred():
     # print "finishing tool\n"
-    with disableUndoContext():
-        closeEventCatcher()
+    with GlobalContext(message="toolOffCleanupDeferred", doPrint=False):
         if cmds.objExists("SkinningWireframe"):
             cmds.delete("SkinningWireframe")
+        closeEventCatcher()
         # unhide previous wireFrames :
         theMesh = getMeshTransfrom()
         if theMesh:
@@ -398,7 +400,7 @@ def toolOffCleanupDeferred():
                 pass
         # delete colors on Q pressed
         doRemoveColorSets()
-        cmds.evalDeferred(retrieveParallelMode)
+        retrieveParallelMode()
 
         # retrieve autoSave
         if cmds.optionVar(ex="autoSaveEnable") and cmds.optionVar(q="autoSaveEnable") == 1:

@@ -231,7 +231,7 @@ lstShortCuts = [
     ("Toggle Solo Mode", "ALT + S"),
     ("Toggle Wireframe", "ALT + W"),
     ("Toggle Xray", "ALT + X"),
-    ("Flood", "ALT + F"),
+    # ("Flood", "ALT + F"),
     ("Undo", "CTRL + Z"),
     ("Quit", "Escape or Q"),
     # ("update Value", "N"),
@@ -678,7 +678,7 @@ class SkinPaintWin(Window):
             self.sizeBrushSetter.theProgress.setValue(value)
 
     def updateCurrentInfluence(self, jointName):
-        print "updateCurrentInfluence {}".format(jointName)
+        # print "updateCurrentInfluence {}".format(jointName)
         items = {}
         ito = None
         for i in range(self.uiInfluenceTREE.topLevelItemCount()):
@@ -1416,6 +1416,11 @@ class SkinPaintWin(Window):
         selectedInfluences = self.selectedInfluences()
         if selectedInfluences:
             dicValues["influenceName"] = selectedInfluences[0]
+        for curveIndex, nm in enumerate(["curveNone", "curveLinear", "curveSmooth", "curveNarrow"]):
+            thebtn = self.__dict__[nm + "_btn"]
+            if thebtn.isChecked():
+                dicValues["curve"] = curveIndex
+                break
         for att in self.listCheckBoxesDirectAction:
             checkBox = self.__dict__[att + "_cb"]
             dicValues[att] = checkBox.isChecked()
