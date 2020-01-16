@@ -366,6 +366,10 @@ def toolOnSetupEnd():
 
 
 def toolOffCleanup():
+    cmds.evalDeferred(toolOffCleanupDeferred)
+
+
+def toolOffCleanupDeferred():
     # print "finishing tool\n"
     with disableUndoContext():
         closeEventCatcher()
@@ -385,12 +389,16 @@ def toolOffCleanup():
                 pass
         # delete colors on Q pressed
         doRemoveColorSets()
-        val = cmds.optionVar(q="revertParallelEvaluationMode")
-        if val != 0:
-            cmds.optionVar(intValue=["revertParallelEvaluationMode", 0])
-            mode = "parallel" if val == 3 else "serial"
-            cmds.evaluationManager(mode=mode)
+        cmds.evalDeferred(retrieveParallelMode)
         callPaintEditorFunction("paintEnd")
+
+
+def retrieveParallelMode():
+    val = cmds.optionVar(q="revertParallelEvaluationMode")
+    if val != 0:
+        cmds.optionVar(intValue=["revertParallelEvaluationMode", 0])
+        mode = "parallel" if val == 3 else "serial"
+        cmds.evaluationManager(mode=mode)
 
 
 def escapePressed():
