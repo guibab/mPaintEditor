@@ -465,7 +465,8 @@ class SkinPaintWin(Window):
             print "can't remove it "
         deleteTheJobs("SkinPaintWin.refreshCallBack")
         deleteTheJobs("SkinPaintWin.updateMirrorCB")
-        # cmds.scriptJob( kill=self.refreshSJ, force=True)
+        cmds.scriptJob(kill=self.refreshSJ, force=True)
+        print "callBack deleted"
         # for callBck in self.close_callback : OpenMaya.MSceneMessage.removeCallback(callBck)
 
     commandIndex = -1
@@ -567,8 +568,12 @@ class SkinPaintWin(Window):
         ]
         if val:
             self.lock_btn.setIcon(_icons["lock"])
+            cmds.scriptJob(kill=self.refreshSJ, force=True)
+            print "deleting callback"
         else:
             self.lock_btn.setIcon(_icons["unlock"])
+            self.refreshSJ = cmds.scriptJob(event=["SelectionChanged", self.refreshCallBack])
+            print "recreating callback"
         self.unLock = not val
 
     def changePin(self, val):
