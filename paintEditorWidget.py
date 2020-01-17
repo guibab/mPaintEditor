@@ -232,6 +232,7 @@ lstShortCuts = [
     ("Toggle Wireframe", "ALT + W"),
     ("Toggle Xray", "ALT + X"),
     # ("Flood", "ALT + F"),
+    ("Orbit Center To", "F"),
     ("Undo", "CTRL + Z"),
     ("Quit", "Escape or Q"),
     # ("update Value", "N"),
