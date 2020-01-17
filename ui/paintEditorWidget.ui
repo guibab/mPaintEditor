@@ -752,6 +752,28 @@ click to fix</string>
              </property>
             </spacer>
            </item>
+           <item>
+            <widget class="QPushButton" name="dgParallel_btn">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>55</width>
+               <height>18</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>D</string>
+             </property>
+             <property name="text">
+              <string>DG</string>
+             </property>
+             <property name="checkable">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
           </layout>
          </widget>
         </item>

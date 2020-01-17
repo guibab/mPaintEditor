@@ -964,11 +964,11 @@ class SkinPaintWin(Window):
         )
         self.sizeBrushSetter.setAddMode(False, autoReset=False)
 
-        Hlayout = QtWidgets.QHBoxLayout(self)
+        Hlayout = QtWidgets.QHBoxLayout()
         Hlayout.setContentsMargins(0, 0, 0, 0)
         Hlayout.setSpacing(0)
 
-        Vlayout = QtWidgets.QVBoxLayout(self)
+        Vlayout = QtWidgets.QVBoxLayout()
         Vlayout.setContentsMargins(0, 0, 0, 0)
         Vlayout.setSpacing(0)
         Vlayout.addWidget(self.valueSetter)
@@ -981,7 +981,7 @@ class SkinPaintWin(Window):
 
         self.widgetAbs = self.addButtonsDirectSet([0.25, 0.5, 1, 2, 5, 10, 25, 50, 75, 100])
 
-        Hlayout2 = QtWidgets.QHBoxLayout(self)
+        Hlayout2 = QtWidgets.QHBoxLayout()
         Hlayout2.setContentsMargins(0, 0, 0, 0)
         Hlayout2.setSpacing(0)
         Hlayout2.addWidget(self.widgetAbs)
