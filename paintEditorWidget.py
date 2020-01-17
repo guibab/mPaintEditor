@@ -867,6 +867,7 @@ class SkinPaintWin(Window):
         self.lock_btn.setIcon(_icons["unlock"])
         self.refresh_btn.setIcon(_icons["refresh"])
         self.lock_btn.toggled.connect(self.changeLock)
+        self.dgParallel_btn.toggled.connect(self.changeDGParallel)
         self.refresh_btn.clicked.connect(self.refreshBtn)
         self.enterPaint_btn.clicked.connect(self.enterPaint)
 
@@ -1026,6 +1027,17 @@ class SkinPaintWin(Window):
         things that are not working yet !!!
         """
 
+    def changeDGParallel(self, val):
+        # isDG = cmds.evaluationManager( q=True, mode=True) == [u'off']
+        if val:
+            self.dgParallel_btn.setText("parallel on")
+            cmds.evaluationManager(mode="parallel")
+        else:
+            self.dgParallel_btn.setText("parallel off")
+            cmds.evaluationManager(mode="off")
+        # val = cmds.optionVar(q="evaluationMode")
+        # cmds.evaluationManager(  mode=goodMode)
+
     def wireframeToggle(self, val):
         if not val and cmds.objExists("SkinningWireframe"):
             cmds.delete("SkinningWireframe")
@@ -1055,6 +1067,8 @@ class SkinPaintWin(Window):
         self.sizeBrushSetter.updateBtn()
 
     def updateUIwithContextValues(self):
+        self.dgParallel_btn.setChecked(cmds.optionVar(q="evaluationMode") == 3)
+
         KArgs = fixOptionVarContext()
         if "soloColor" in KArgs:
             val = int(KArgs["soloColor"])
@@ -1328,6 +1342,7 @@ class SkinPaintWin(Window):
             self.refresh()
 
     def refresh(self, force=False, renamedCalled=False):
+        self.dgParallel_btn.setChecked(cmds.optionVar(q="evaluationMode") == 3)
         # print "refresh CALLED ", force
         with GlobalContext(message="paintEditor getAllData", doPrint=False):
             resultData = self.dataOfSkin.getAllData(

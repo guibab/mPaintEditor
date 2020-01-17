@@ -755,11 +755,17 @@ click to fix</string>
            <item>
             <widget class="QPushButton" name="dgParallel_btn">
              <property name="enabled">
-              <bool>false</bool>
+              <bool>true</bool>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>75</width>
+               <height>0</height>
+              </size>
              </property>
              <property name="maximumSize">
               <size>
-               <width>55</width>
+               <width>75</width>
                <height>18</height>
               </size>
              </property>
@@ -767,7 +773,7 @@ click to fix</string>
               <string>D</string>
              </property>
              <property name="text">
-              <string>DG</string>
+              <string>parallel off</string>
              </property>
              <property name="checkable">
               <bool>true</bool>
