@@ -61,6 +61,7 @@ def callMarkingMenu():
         ("add", "N", "add", 0),
         ("remove", "S", "rmv", 1),
         ("addPercent", "NW", "addPerc", 2),
+        ("sharpen", "SW", "sharpen", 5),
         ("absolute", "NE", "abs", 3),
         ("smooth", "W", "smooth", 4),
         ("locks Verts", "E", "locks", 6),

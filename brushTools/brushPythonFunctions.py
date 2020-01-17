@@ -11,6 +11,8 @@ import maya.OpenMaya as om
 import maya.OpenMayaAnim as oma
 from pymel.core import PyNode
 
+from Qt import QtGui
+
 from mWeightEditor.tools.utils import GlobalContext
 
 """
@@ -55,22 +57,31 @@ class disableUndoContext(object):
         #     cmds.softSelect(e=True, softSelectEnabled=self.isSoftSelect)
 
 
-def get_random_color(pastel_factor=0.5):
-    return [
+def get_random_color(pastel_factor=0.5, valueMult=0.5, saturationMult=0.5):
+    col = [
         (x + pastel_factor) / (1.0 + pastel_factor)
         for x in [random.uniform(0, 1.0) for i in [1, 2, 3]]
     ]
+    theCol = QtGui.QColor.fromRgbF(*col)
+    theCol.setHsvF(
+        theCol.hueF(),
+        valueMult * theCol.valueF() + 0.5 * valueMult,
+        saturationMult * theCol.saturationF() + 0.5 * saturationMult,
+    )
+    return theCol.getRgbF()[:3]
 
 
 def color_distance(c1, c2):
     return sum([abs(x[0] - x[1]) for x in zip(c1, c2)])
 
 
-def generate_new_color(existing_colors, pastel_factor=0.5):
+def generate_new_color(existing_colors, pastel_factor=0.5, valueMult=0.5, saturationMult=0.5):
     max_distance = None
     best_color = None
     for i in range(0, 100):
-        color = get_random_color(pastel_factor=pastel_factor)
+        color = get_random_color(
+            pastel_factor=pastel_factor, valueMult=valueMult, saturationMult=saturationMult
+        )
         if not existing_colors:
             return color
         best_distance = min([color_distance(color, c) for c in existing_colors])

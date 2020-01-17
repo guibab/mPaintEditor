@@ -822,6 +822,8 @@ class SkinPaintWin(Window):
                     cmds.skinCluster(skn, e=True, removeInfluence=zeroInfluences)
                     cmds.evalDeferred(self.selectRefresh)
 
+    valueMult, saturationMult = 0.6, 0.6
+
     def randomColors(self):
         # self.delete_btn.click()
 
@@ -837,7 +839,12 @@ class SkinPaintWin(Window):
             theCol = QtGui.QColor.fromHsvF (h,s,v)
             values = [theCol.redF(), theCol.greenF(), theCol.blueF()]
             """
-            values = generate_new_color(colors, pastel_factor=0.2)
+            values = generate_new_color(
+                colors,
+                pastel_factor=0.2,
+                valueMult=self.valueMult,
+                saturationMult=self.saturationMult,
+            )
             colors.append(values)
 
             # print ind,nm, values
