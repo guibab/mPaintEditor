@@ -482,8 +482,10 @@ class SkinPaintWin(Window):
     highlightingBtn = False
 
     def highlightBtn(self, btnName):
-        thebtn = self.__dict__[btnName + "_btn"]
-        thebtn.setChecked(True)
+        key = btnName + "_btn"
+        if key in self.__dict__:
+            thebtn = self.__dict__[key]
+            thebtn.setChecked(True)
 
     def getCommandIndex(self):
         for ind, nm in enumerate(self.commandArray):

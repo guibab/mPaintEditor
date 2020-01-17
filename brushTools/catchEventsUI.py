@@ -158,7 +158,8 @@ class CatchEventsWidget(QtWidgets.QWidget):
         self.OPressed = False
         self.markingMenuShown = False
         self.closingNextPressMarkingMenu = False
-        self.CtrlOrShiftPressed = False
+        self.ctrlPressed = False
+        self.shiftPressed = False
 
         self.rootWin = rootWindow()
         ptr = OpenMayaUI.MQtUtil.mainWindow()
@@ -226,31 +227,61 @@ class CatchEventsWidget(QtWidgets.QWidget):
         self.filterInstalled = False
         QApplication.instance().removeEventFilter(self)
 
+    def highlightBtns(self):
+        btnQtToSelect = ""
+        btnMayaToSelect = ""
+        showStrenghtValue = False
+        if self.shiftPressed and self.ctrlPressed:
+            btnQtToSelect = "sharpen"
+            btnMayaToSelect = "brSkinBrushSharpenRb"
+        elif self.shiftPressed:
+            if self.prevButton == "brSkinBrushAddRb":
+                btnMayaToSelect = "brSkinBrushRemoveRb"
+            elif self.prevButton == "brSkinBrushLockVerticesRb":
+                btnMayaToSelect = "brSkinBrushUnLockVerticesRb"
+            else:
+                btnMayaToSelect = self.prevButton
+            if self.prevQtButton:
+                if self.prevQtButton == "add":
+                    btnQtToSelect = "rmv"
+                elif self.prevQtButton == "locks":
+                    btnQtToSelect = "unLocks"
+                else:
+                    btnQtToSelect = self.prevQtButton
+        elif self.ctrlPressed:
+            btnQtToSelect = "smooth"
+            btnMayaToSelect = "brSkinBrushSmoothRb"
+        else:
+            btnQtToSelect = self.prevQtButton
+            btnMayaToSelect = self.prevButton
+        callPaintEditorFunction("highlightBtn", btnQtToSelect)
+        if cmds.radioButton(btnMayaToSelect, ex=True):
+            cmds.radioButton(btnMayaToSelect, edit=True, select=True)
+        if self.ctrlPressed:
+            value = cmds.brSkinBrushContext("brSkinBrushContext1", query=True, smoothStrength=True)
+        else:
+            value = cmds.brSkinBrushContext("brSkinBrushContext1", query=True, strength=True)
+        callPaintEditorFunction("updateStrengthVal", value)
+        try:
+            cmds.floatSliderGrp("brSkinBrushStrength", edit=True, value=value)
+        except:
+            pass
+
     def eventFilter(self, obj, event):
         if event.type() == QtCore.QEvent.MouseMove:
             event.ignore()
             return super(CatchEventsWidget, self).eventFilter(obj, event)
         if event.type() == QtCore.QEvent.KeyRelease:
-            if self.CtrlOrShiftPressed and event.key() in [
-                QtCore.Qt.Key_Shift,
-                QtCore.Qt.Key_Control,
-            ]:
-                if self.verbose:
-                    print ("custom SHIFT or CONTROL released")
-                self.CtrlOrShiftPressed = False
-                if cmds.radioButton(self.prevButton, ex=True):
-                    cmds.radioButton(self.prevButton, edit=True, select=True)
-                if self.prevQtButton:
-                    callPaintEditorFunction("highlightBtn", self.prevQtButton)
-                prevStrengthValue = cmds.brSkinBrushContext(
-                    "brSkinBrushContext1", query=True, strength=True
-                )  # cmds.floatSliderGrp ("brSkinBrushStrength", query =True, value=True)
-                callPaintEditorFunction("updateStrengthVal", prevStrengthValue)
-                try:
-                    cmds.floatSliderGrp("brSkinBrushStrength", edit=True, value=prevStrengthValue)
-                except:
-                    pass
-                # event.ignore ()
+            shiftIsReleased = event.key() == QtCore.Qt.Key_Shift
+            ctrlIsReleased = event.key() == QtCore.Qt.Key_Control
+            if (shiftIsReleased and self.shiftPressed) or (ctrlIsReleased and self.ctrlPressed):
+                # print("shiftIsReleased {} ctrlIsReleased {}".format(shiftIsReleased, ctrlIsReleased))
+                if self.shiftPressed and shiftIsReleased:
+                    self.shiftPressed = False
+                if self.ctrlPressed and ctrlIsReleased:
+                    self.ctrlPressed = False
+                self.highlightBtns()
+                # print("self.shiftPressed {} self.ctrlPressed {}".format(self.shiftPressed, self.ctrlPressed))
             elif event.key() == QtCore.Qt.Key_U:
                 if obj is self.EventFilterWidgetReceiver and self.OPressed:
                     # print "  OReleased"
@@ -372,63 +403,32 @@ class CatchEventsWidget(QtWidgets.QWidget):
                 event.ignore()
                 return True
             elif event.key() == QtCore.Qt.Key_Control:
-                if QApplication.mouseButtons() == QtCore.Qt.NoButton:
-                    if self.verbose:
-                        print "custom CONTROL pressed"
+                if QApplication.mouseButtons() == QtCore.Qt.NoButton and not self.ctrlPressed:
+                    self.ctrlPressed = True
                     event.ignore()
-                    self.prevButton = self.lstButtons[
-                        cmds.brSkinBrushContext(
-                            "brSkinBrushContext1", query=True, commandIndex=True
-                        )
-                    ]
-                    self.prevQtButton = callPaintEditorFunction("getEnabledButton")
-                    # cmds.radioCollection( "brSkinBrushCommandRbCollection", query=True, select=True)
-
-                    if self.prevButton != "brSkinBrushSmoothRb":
-                        self.CtrlOrShiftPressed = True
-
-                        if cmds.radioButton("brSkinBrushSmoothRb", ex=True):
-                            cmds.radioButton("brSkinBrushSmoothRb", edit=True, select=True)
-                        callPaintEditorFunction("highlightBtn", "smooth")
-                        smoothValue = cmds.brSkinBrushContext(
-                            "brSkinBrushContext1", query=True, smoothStrength=True
-                        )
-                        try:
-                            cmds.floatSliderGrp("brSkinBrushStrength", edit=True, value=smoothValue)
-                        except:
-                            pass
-                        callPaintEditorFunction("updateStrengthVal", smoothValue)
-                    return True
-            elif event.key() == QtCore.Qt.Key_Shift and not self.CtrlOrShiftPressed:
-                if QApplication.mouseButtons() == QtCore.Qt.NoButton:
-                    if self.verbose:
-                        print "custom SHIFT pressed"
+                    if not self.shiftPressed:
+                        self.prevButton = self.lstButtons[
+                            cmds.brSkinBrushContext(
+                                "brSkinBrushContext1", query=True, commandIndex=True
+                            )
+                        ]
+                        self.prevQtButton = callPaintEditorFunction("getEnabledButton")
+                    self.highlightBtns()
+            if event.key() == QtCore.Qt.Key_Shift:
+                if QApplication.mouseButtons() == QtCore.Qt.NoButton and not self.shiftPressed:
+                    self.shiftPressed = True
                     event.ignore()
-                    self.CtrlOrShiftPressed = True
-                    self.prevButton = self.lstButtons[
-                        cmds.brSkinBrushContext(
-                            "brSkinBrushContext1", query=True, commandIndex=True
-                        )
-                    ]
-                    self.prevQtButton = callPaintEditorFunction("getEnabledButton")
-                    # cmds.radioCollection( "brSkinBrushCommandRbCollection", query=True, select=True)
-                    try:
-                        if (self.prevButton == "brSkinBrushAddRb") and cmds.radioButton(
-                            "brSkinBrushRemoveRb", ex=True
-                        ):
-                            cmds.radioButton("brSkinBrushRemoveRb", edit=True, select=True)
-                        elif (self.prevButton == "brSkinBrushLockVerticesRb") and cmds.radioButton(
-                            "brSkinBrushUnLockVerticesRb", ex=True
-                        ):
-                            cmds.radioButton("brSkinBrushUnLockVerticesRb", edit=True, select=True)
-                    except:
-                        pass
-                    if self.prevQtButton:
-                        if self.prevQtButton == "add":
-                            callPaintEditorFunction("highlightBtn", "rmv")
-                        elif self.prevQtButton == "locks":
-                            callPaintEditorFunction("highlightBtn", "unLocks")
-                    return True
+                    # callPaintEditorFunction("highlightBtn", "sharpen")
+                    if not self.ctrlPressed:
+                        if self.verbose:
+                            print "custom SHIFT pressed"
+                        self.prevButton = self.lstButtons[
+                            cmds.brSkinBrushContext(
+                                "brSkinBrushContext1", query=True, commandIndex=True
+                            )
+                        ]
+                        self.prevQtButton = callPaintEditorFunction("getEnabledButton")
+                    self.highlightBtns()
             elif event.modifiers() == QtCore.Qt.AltModifier:
                 if event.key() == QtCore.Qt.Key_X:
                     listModelPanels = [
