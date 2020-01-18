@@ -1455,6 +1455,9 @@ class SkinPaintWin(Window):
         for btnName in self.uiToActivateWithPaint:
             self.__dict__[btnName].setEnabled(False)
         self.uiInfluenceTREE.setStyleSheet("")
+        self.previousInfluenceName = cmds.brSkinBrushContext(
+            "brSkinBrushContext1", q=True, influenceName=True
+        )
         # self.changeMultiSolo(-1)
 
     def paintStart(self):  # called by the brush
