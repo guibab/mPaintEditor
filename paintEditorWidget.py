@@ -739,7 +739,28 @@ class SkinPaintWin(Window):
                 )
                 cmds.evalDeferred(self.selectRefresh)
                 cmds.evalDeferred(partial(self.reselectIndices, toSelect))
+                cmds.evalDeferred(partial(self.addInfluencesColors, toSelect))
                 # add color to the damn influences added
+
+    def addInfluencesColors(self, toSelect):
+        count = self.uiInfluenceTREE.topLevelItemCount()
+        colors = []
+        for ind in toSelect:
+            item = self.uiInfluenceTREE.topLevelItem(ind)
+            if ind < count:
+                nm = item._influence
+                ind = item._index
+                item.color
+                values = generate_new_color(
+                    colors,
+                    pastel_factor=0.2,
+                    valueMult=self.valueMult,
+                    saturationMult=self.saturationMult,
+                )
+                colors.append(values)
+                item.setColor(values)
+            else:
+                colors.append(item.currentColor)
 
     def fromScene(self):
         sel = cmds.ls(sl=True, tr=True)
