@@ -1451,7 +1451,7 @@ p, li { white-space: pre-wrap; }
                      <string>Edges</string>
                     </property>
                     <property name="checked">
-                     <bool>false</bool>
+                     <bool>true</bool>
                     </property>
                    </widget>
                   </item>
@@ -1484,7 +1484,7 @@ p, li { white-space: pre-wrap; }
                   <string>Draw Brush in paint</string>
                  </property>
                  <property name="checked">
-                  <bool>false</bool>
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
