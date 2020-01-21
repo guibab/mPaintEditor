@@ -646,6 +646,17 @@ def getPaintEditor():
     return None
 
 
+def afterPaint():
+    import __main__
+    from Qt.QtWidgets import QApplication
+
+    if (
+        hasattr(__main__, "weightEditor")
+        and __main__.weightEditor in QApplication.instance().topLevelWidgets()
+    ):
+        __main__.weightEditor.refreshSkinDisplay()
+
+
 def callPaintEditorFunction(function, *args, **kwargs):
     paintEditor = getPaintEditor()
     if paintEditor and hasattr(paintEditor, function):
