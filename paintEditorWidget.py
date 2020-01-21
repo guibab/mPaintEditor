@@ -1430,6 +1430,7 @@ class SkinPaintWin(Window):
                 jointItem.setHidden(not self.showZeroDeformers and jointItem.isZeroDfm)
             self.updateCurrentInfluence(self.previousInfluenceName)
         self.updateWarningBtn()
+        self.showHideLocks(self.showLocks_btn.isChecked())
 
     def fixSparseArray(self):
         if self.isInPaint():
