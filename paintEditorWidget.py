@@ -1389,12 +1389,24 @@ class SkinPaintWin(Window):
             self.refresh()
 
     def refresh(self, force=False, renamedCalled=False):
-        self.dgParallel_btn.setChecked(cmds.optionVar(q="evaluationMode") == 3)
         # print "refresh CALLED ", force
         with GlobalContext(message="paintEditor getAllData", doPrint=False):
             resultData = self.dataOfSkin.getAllData(
                 displayLocator=False, getskinWeights=True, force=force
             )
+            doForce = not resultData
+            doForce = (
+                doForce
+                and cmds.objExists(self.dataOfSkin.deformedShape)
+                and self.dataOfSkin.theDeformer == ""
+            )
+            doForce = doForce and cmds.nodeType(self.dataOfSkin.deformedShape) in [
+                "mesh",
+                "nurbsSurface",
+            ]
+            if doForce:
+                self.dataOfSkin.clearData()
+                force = True
         if renamedCalled or resultData or force:
             # print "- refreshing -"
 
@@ -1429,6 +1441,7 @@ class SkinPaintWin(Window):
                 jointItem.isZeroDfm = ind in self.dataOfSkin.hideColumnIndices
                 jointItem.setHidden(not self.showZeroDeformers and jointItem.isZeroDfm)
             self.updateCurrentInfluence(self.previousInfluenceName)
+        self.dgParallel_btn.setChecked(cmds.optionVar(q="evaluationMode") == 3)
         self.updateWarningBtn()
         self.showHideLocks(self.showLocks_btn.isChecked())
 
