@@ -236,6 +236,11 @@ def createWireframe(meshNode, hideOther=True, valAlpha=0.25):
         loc = cmds.createNode("wireframeDisplay", p=prt, n="SkinningWireframeShape")
         cmds.connectAttr(msh + ".outMesh", loc + ".inMesh", f=True)
         cmds.setAttr(loc + ".ihi", False)
+
+        # print (msh+".nurbsTessellate")
+        # if cmds.objExists(msh+".nurbsTessellate"):
+        if cmds.attributeQuery("nurbsTessellate", node=msh, exists=True):
+            cmds.setAttr(loc + ".enableSmooth", True)
     return prt
 
 
@@ -348,7 +353,7 @@ def toolOnSetupStart():
     selectedNurbs = cmds.ls(mshShapeSelected, type="nurbsSurface")
 
     if selectedNurbs:
-        mshShapeSelected = addNurbsTesselate(selectedNurbs)
+        mshShapeSelected = addNurbsTessellate(selectedNurbs)
         for nrbs in selectedNurbs:
             cmds.hide(nrbs)
     # for colors
@@ -366,7 +371,7 @@ def toolOnSetupStart():
     callEventCatcher()
 
 
-def addNurbsTesselate(selectedNurbs):
+def addNurbsTessellate(selectedNurbs):
     mshs = []
     for nrbs in selectedNurbs:
         if cmds.listConnections(nrbs, s=0, d=1, type="nurbsTessellate"):
@@ -386,10 +391,10 @@ def addNurbsTesselate(selectedNurbs):
         mshs.append(msh)
         cmds.sets(msh, edit=True, forceElement="initialShadingGroup")
 
-        cmds.addAttr(msh, longName="nurbsTesselate", attributeType="double", defaultValue=0.0)
-        if not cmds.attributeQuery("nurbsTesselate", n=nrbs, ex=True):
-            cmds.addAttr(nrbs, longName="nurbsTesselate", attributeType="double", defaultValue=0.0)
-        cmds.connectAttr(nrbs + ".nurbsTesselate", msh + ".nurbsTesselate", f=True)
+        cmds.addAttr(msh, longName="nurbsTessellate", attributeType="double", defaultValue=0.0)
+        if not cmds.attributeQuery("nurbsTessellate", n=nrbs, ex=True):
+            cmds.addAttr(nrbs, longName="nurbsTessellate", attributeType="double", defaultValue=0.0)
+        cmds.connectAttr(nrbs + ".nurbsTessellate", msh + ".nurbsTessellate", f=True)
     return mshs
 
 
@@ -405,48 +410,13 @@ def disconnectNurbs():
 def showBackNurbs(theMesh):
     shps = cmds.listRelatives(theMesh, s=True, path=True, type="nurbsSurface") or []
     for nrbs in shps:
-        if cmds.attributeQuery("nurbsTesselate", n=nrbs, ex=True):
-            outConn = cmds.listConnections(nrbs + ".nurbsTesselate", s=False, d=True, shapes=True)
+        if cmds.attributeQuery("nurbsTessellate", n=nrbs, ex=True):
+            outConn = cmds.listConnections(nrbs + ".nurbsTessellate", s=False, d=True, shapes=True)
             if outConn:
                 cmds.delete(outConn)
-            cmds.deleteAttr(nrbs + ".nurbsTesselate")
+            cmds.deleteAttr(nrbs + ".nurbsTessellate")
     if shps:
         cmds.showHidden(shps)
-
-
-# def addNurbsTesselate(selectedNurbs):
-#     mshs=[]
-#     for nrbs in selectedNurbs:
-#         if cmds.listConnections (nrbs, s=0, d=1, type="nurbsTessellate"):
-#             continue
-#         prt ,= cmds.listRelatives(nrbs, p=True, path=True)
-#         nurbsTessellate = cmds.createNode("nurbsTessellate",  skipSelect=True)
-#         cmds.setAttr(nurbsTessellate + ".format", 3)
-#         cmds.setAttr(nurbsTessellate + ".polygonType", 1)
-#         cmds.setAttr(nurbsTessellate + ".matchNormalDir", 1)
-#         cmds.connectAttr(nrbs+".worldSpace[0]", nurbsTessellate +".inputSurface", f=True)
-
-#         mshTesselate = cmds.createNode("mesh", p=prt, skipSelect=True, n="mshTesselate")
-#         msh = cmds.createNode("mesh", p=prt, skipSelect=True, n="msh")
-#         cmds.connectAttr(nurbsTessellate+".outputPolygon", mshTesselate +".inMesh", f=True)
-#         cmds.connectAttr(nurbsTessellate+".outputPolygon", msh +".inMesh", f=True)
-
-#         cmds.setAttr(msh + ".smoothLevel",3)
-#         cmds.setAttr(msh + ".displaySmoothMesh",2)
-#         mshs.append(msh)
-#         cmds.sets(msh, edit=True, forceElement="initialShadingGroup")
-
-#         cmds.addAttr(msh, longName="nurbsTesselate", attributeType="double", defaultValue=0.0)
-#         if not cmds.attributeQuery ("nurbsTesselate", n=nrbs, ex=True):
-#             cmds.addAttr(nrbs, longName="nurbsTesselate", attributeType="double", defaultValue=0.0)
-#         cmds.connectAttr (nrbs+".nurbsTesselate", msh+".nurbsTesselate", f=True)
-
-#         cmds.evalDeferred(partial(deferredDisconnect, mshTesselate, msh))
-#         """
-#         msh, tesselateNode = cmds.nurbsToPoly( "nurbsPlane1", matchNormalDir=True, constructionHistory=True, format=3, polygonType=1)
-#         mshShapeSelected = cmds.listRelatives(msh, s=True)
-#         """
-#     return mshs
 
 
 def deferredDisconnect(mshTesselate, msh):
