@@ -1395,6 +1395,7 @@ class SkinPaintWin(Window):
     def refresh(self, force=False, renamedCalled=False):
         # print "refresh CALLED ", force
         with GlobalContext(message="paintEditor getAllData", doPrint=False):
+            prevDataOfSkin = self.dataOfSkin.deformedShape, self.dataOfSkin.theDeformer
             resultData = self.dataOfSkin.getAllData(
                 displayLocator=False, getskinWeights=True, force=force
             )
@@ -1411,6 +1412,8 @@ class SkinPaintWin(Window):
             if doForce:
                 self.dataOfSkin.clearData()
                 force = True
+            elif not resultData:
+                self.dataOfSkin.deformedShape, self.dataOfSkin.theDeformer = prevDataOfSkin
         if renamedCalled or resultData or force:
             # print "- refreshing -"
 
