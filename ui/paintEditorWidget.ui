@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>420</width>
+    <width>289</width>
     <height>879</height>
    </rect>
   </property>
@@ -693,7 +693,7 @@ p, li { white-space: pre-wrap; }
             </widget>
             <widget class="QCheckBox" name="mirrorActive_cb">
              <property name="enabled">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <property name="geometry">
               <rect>
@@ -1179,9 +1179,9 @@ p, li { white-space: pre-wrap; }
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>0</y>
-          <width>383</width>
-          <height>636</height>
+          <y>-239</y>
+          <width>252</width>
+          <height>681</height>
          </rect>
         </property>
         <layout class="QGridLayout" name="gridLayout_7">
@@ -1507,7 +1507,7 @@ p, li { white-space: pre-wrap; }
               </property>
               <layout class="QHBoxLayout" name="smoothOption_lay">
                <property name="spacing">
-                <number>6</number>
+                <number>3</number>
                </property>
                <property name="margin">
                 <number>9</number>
@@ -1560,14 +1560,46 @@ p, li { white-space: pre-wrap; }
             <item>
              <widget class="QGroupBox" name="mirrorOption_gb">
               <property name="enabled">
-               <bool>false</bool>
+               <bool>true</bool>
               </property>
               <property name="title">
                <string>Mirror options</string>
               </property>
-              <layout class="QVBoxLayout" name="verticalLayout_3">
+              <layout class="QVBoxLayout" name="mirrorOptionsLAY">
+               <property name="spacing">
+                <number>3</number>
+               </property>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_7">
+                 <item>
+                  <widget class="QComboBox" name="uiSymmetryCB"/>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="uiResetSymmetryBtn">
+                   <property name="minimumSize">
+                    <size>
+                     <width>0</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>50</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>Reset</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
                <item>
                 <widget class="QLabel" name="label_17">
+                 <property name="enabled">
+                  <bool>true</bool>
+                 </property>
                  <property name="text">
                   <string>search replace for influences :</string>
                  </property>
@@ -1578,14 +1610,80 @@ p, li { white-space: pre-wrap; }
                  <item>
                   <widget class="QLineEdit" name="uiLeftNamesLE">
                    <property name="text">
-                    <string>*_L_*</string>
+                    <string>Dfm_L*</string>
                    </property>
                   </widget>
                  </item>
                  <item>
                   <widget class="QLineEdit" name="uiRightNamesLE">
                    <property name="text">
-                    <string>*_R_*</string>
+                    <string>Dfm_R*</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="uiToleranceLAY">
+                 <item>
+                  <widget class="QLabel" name="uiTolerance_LBL">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>60</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="layoutDirection">
+                    <enum>Qt::LeftToRight</enum>
+                   </property>
+                   <property name="text">
+                    <string>Tolerance :</string>
+                   </property>
+                   <property name="textFormat">
+                    <enum>Qt::PlainText</enum>
+                   </property>
+                   <property name="alignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                   <property name="wordWrap">
+                    <bool>false</bool>
+                   </property>
+                   <property name="indent">
+                    <number>0</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QDoubleSpinBox" name="uiTolerance_SB">
+                   <property name="enabled">
+                    <bool>true</bool>
+                   </property>
+                   <property name="minimumSize">
+                    <size>
+                     <width>50</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>166666</width>
+                     <height>18</height>
+                    </size>
+                   </property>
+                   <property name="decimals">
+                    <number>5</number>
+                   </property>
+                   <property name="maximum">
+                    <double>100.000000000000000</double>
+                   </property>
+                   <property name="singleStep">
+                    <double>0.010000000000000</double>
+                   </property>
+                   <property name="value">
+                    <double>0.010000000000000</double>
                    </property>
                   </widget>
                  </item>
