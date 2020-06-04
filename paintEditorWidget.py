@@ -31,6 +31,7 @@ from mWeightEditor.tools.utils import (
 from brushTools.catchEventsUI import CatchEventsWidget, rootWindow
 from brushTools.brushPythonFunctions import (
     disableUndoContext,
+    UndoContext,
     setColorsOnJoints,
     fixOptionVarContext,
     generate_new_color,
@@ -418,7 +419,7 @@ class SkinPaintWin(Window):
         self.soloColor_cb.setCurrentIndex(ind)
 
     def comboSoloColorChanged(self, ind):
-        with disableUndoContext():
+        with UndoContext("comboSoloColorChanged"):
             soloColorIndex = ind
             cmds.optionVar(intValue=["soloColor_SkinPaintWin", ind])
             for i in range(3):
@@ -637,11 +638,12 @@ class SkinPaintWin(Window):
         return False
 
     def exitPaint(self, *args):  # *args for callBacks
-        if self.isInPaint():
-            mel.eval("setToolTo $gMove;")
+        with UndoContext("exitPaint"):
+            if self.isInPaint():
+                mel.eval("setToolTo $gMove;")
 
     def enterPaint(self):
-        with disableUndoContext():
+        with UndoContext("enterPaint"):
             if not cmds.pluginInfo("brSkinBrush", query=True, loaded=True):
                 cmds.loadPlugin("brSkinBrush")
             if self.dataOfSkin.theSkinCluster:
@@ -1504,7 +1506,7 @@ class SkinPaintWin(Window):
         # self.changeMultiSolo(-1)
 
     def paintStart(self):  # called by the brush
-        with disableUndoContext():
+        with UndoContext("paintstart"):
             for btnName in self.uiToActivateWithPaint:
                 self.__dict__[btnName].setEnabled(True)
             self.uiInfluenceTREE.setStyleSheet("QWidget {border : 2px solid red}\n")

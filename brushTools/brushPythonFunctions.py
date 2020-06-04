@@ -39,18 +39,34 @@ class disableUndoContext(object):
             # cmds.undoInfo(state=True)
 
 
+class UndoContext(object):
+    """
+    **CONTEXT** class(*use* ``with`` *statement*)
+    """
+
+    def __init__(self, chunkName="myProcessTrue"):
+        self.chunkName = chunkName
+
+    def __enter__(self):
+        cmds.undoInfo(openChunk=True, chunkName=self.chunkName)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        cmds.undoInfo(closeChunk=True)
+
+
 def get_random_color(pastel_factor=0.5, valueMult=0.5, saturationMult=0.5):
-    col = [
-        (x + pastel_factor) / (1.0 + pastel_factor)
-        for x in [random.uniform(0, 1.0) for i in [1, 2, 3]]
-    ]
-    theCol = QtGui.QColor.fromRgbF(*col)
-    theCol.setHsvF(
-        theCol.hueF(),
-        valueMult * theCol.valueF() + 0.5 * valueMult,
-        saturationMult * theCol.saturationF() + 0.5 * saturationMult,
-    )
-    return theCol.getRgbF()[:3]
+    with UndoContext("get_random_color"):
+        col = [
+            (x + pastel_factor) / (1.0 + pastel_factor)
+            for x in [random.uniform(0, 1.0) for i in [1, 2, 3]]
+        ]
+        theCol = QtGui.QColor.fromRgbF(*col)
+        theCol.setHsvF(
+            theCol.hueF(),
+            valueMult * theCol.valueF() + 0.5 * valueMult,
+            saturationMult * theCol.saturationF() + 0.5 * saturationMult,
+        )
+        return theCol.getRgbF()[:3]
 
 
 def color_distance(c1, c2):
@@ -58,135 +74,140 @@ def color_distance(c1, c2):
 
 
 def generate_new_color(existing_colors, pastel_factor=0.5, valueMult=0.5, saturationMult=0.5):
-    max_distance = None
-    best_color = None
-    for i in range(0, 100):
-        color = get_random_color(
-            pastel_factor=pastel_factor, valueMult=valueMult, saturationMult=saturationMult
-        )
-        if not existing_colors:
-            return color
-        best_distance = min([color_distance(color, c) for c in existing_colors])
-        if not max_distance or best_distance > max_distance:
-            max_distance = best_distance
-            best_color = color
-    return best_color
+    with UndoContext("generate_new_color"):
+        max_distance = None
+        best_color = None
+        for i in range(0, 100):
+            color = get_random_color(
+                pastel_factor=pastel_factor, valueMult=valueMult, saturationMult=saturationMult
+            )
+            if not existing_colors:
+                return color
+            best_distance = min([color_distance(color, c) for c in existing_colors])
+            if not max_distance or best_distance > max_distance:
+                max_distance = best_distance
+                best_color = color
+        return best_color
 
 
 def setColorsOnJoints():
-    _colors = []
-    for i in xrange(1, 9):
-        col = cmds.displayRGBColor("userDefined{0}".format(i), q=True)
-        _colors.append(col)
-    for jnt in cmds.ls(type="joint"):
-        theInd = cmds.getAttr(jnt + ".objectColor")
-        currentCol = cmds.getAttr(jnt + ".wireColorRGB")[0]
-        if currentCol == (0.0, 0.0, 0.0):
-            cmds.setAttr(jnt + ".wireColorRGB", *_colors[theInd])
-        for destConn in (
-            cmds.listConnections(
-                jnt + ".objectColorRGB", d=True, s=False, p=True, type="skinCluster"
-            )
-            or []
-        ):
-            cmds.connectAttr(jnt + ".wireColorRGB", destConn, f=True)
+    with UndoContext("setColorsOnJoints"):
+        _colors = []
+        for i in xrange(1, 9):
+            col = cmds.displayRGBColor("userDefined{0}".format(i), q=True)
+            _colors.append(col)
+        for jnt in cmds.ls(type="joint"):
+            theInd = cmds.getAttr(jnt + ".objectColor")
+            currentCol = cmds.getAttr(jnt + ".wireColorRGB")[0]
+            if currentCol == (0.0, 0.0, 0.0):
+                cmds.setAttr(jnt + ".wireColorRGB", *_colors[theInd])
+            for destConn in (
+                cmds.listConnections(
+                    jnt + ".objectColorRGB", d=True, s=False, p=True, type="skinCluster"
+                )
+                or []
+            ):
+                cmds.connectAttr(jnt + ".wireColorRGB", destConn, f=True)
 
 
 def filterInfluences():
-    items = cmds.treeView("brSkinBrushJointTree", query=True, children="")
-    newText = cmds.textFieldGrp("brSkinBrushSearchField", query=True, text=True)
-    hideLocked = cmds.checkBoxGrp("brSkinBrushHideLockCheck", q=True, value1=True)
-    itemsState = [True] * len(items)
-    newTexts = []
-    if newText:
-        newTexts = newText.split(" ")
-        while "" in newTexts:
-            newTexts.remove("")
-    for i, nm in enumerate(items):
-        isLocked = cmds.getAttr(nm + ".lockInfluenceWeights")
+    with UndoContext("filterInfluences"):
+        items = cmds.treeView("brSkinBrushJointTree", query=True, children="")
+        newText = cmds.textFieldGrp("brSkinBrushSearchField", query=True, text=True)
+        hideLocked = cmds.checkBoxGrp("brSkinBrushHideLockCheck", q=True, value1=True)
+        itemsState = [True] * len(items)
+        newTexts = []
+        if newText:
+            newTexts = newText.split(" ")
+            while "" in newTexts:
+                newTexts.remove("")
+        for i, nm in enumerate(items):
+            isLocked = cmds.getAttr(nm + ".lockInfluenceWeights")
 
-        showItem = not (isLocked and hideLocked)
-        if showItem and newTexts:
-            showItem = False
-            for txt in newTexts:
-                txt = txt.replace("*", ".*")
-                showItem = re.search(txt, nm, re.IGNORECASE) != None
-                if showItem:
-                    break
-        itemsState[i] = showItem
-        cmds.treeView("brSkinBrushJointTree", edit=True, itemVisible=[nm, showItem])
-    """
-    else : 
-        for nm , item in self.uiInfluenceTREE.dicWidgName.iteritems():
-            item.setHidden(not self.showZeroDeformers and item.isZeroDfm )
-    """
+            showItem = not (isLocked and hideLocked)
+            if showItem and newTexts:
+                showItem = False
+                for txt in newTexts:
+                    txt = txt.replace("*", ".*")
+                    showItem = re.search(txt, nm, re.IGNORECASE) != None
+                    if showItem:
+                        break
+            itemsState[i] = showItem
+            cmds.treeView("brSkinBrushJointTree", edit=True, itemVisible=[nm, showItem])
+        """
+        else : 
+            for nm , item in self.uiInfluenceTREE.dicWidgName.iteritems():
+                item.setHidden(not self.showZeroDeformers and item.isZeroDfm )
+        """
 
 
 def addInfluences():
-    sel = cmds.ls(sl=True, tr=True)
-    skn = cmds.brSkinBrushContext("brSkinBrushContext1", q=True, skinClusterName=True)
+    with UndoContext("addInfluences"):
+        sel = cmds.ls(sl=True, tr=True)
+        skn = cmds.brSkinBrushContext("brSkinBrushContext1", q=True, skinClusterName=True)
 
-    deformedShape = cmds.skinCluster(skn, q=True, geometry=True)
-    prt = (
-        cmds.listRelatives(deformedShape, path=-True, parent=True)[0]
-        if not cmds.nodeType(deformedShape) == "transform"
-        else deformedShape
-    )
-    if prt in sel:
-        sel.remove(prt)
-
-    allInfluences = cmds.skinCluster(skn, query=True, influence=True)
-    toAdd = filter(lambda x: x not in allInfluences, sel)
-    if toAdd:
-        toAddStr = "add Influences :\n - "
-        toAddStr += "\n - ".join(toAdd[:10])
-        if len(toAdd) > 10:
-            toAddStr += "\n -....and {0} others..... ".format(len(toAdd) - 10)
-
-        res = cmds.confirmDialog(
-            t="add Influences",
-            m=toAddStr,
-            button=["Yes", "No"],
-            defaultButton="Yes",
-            cancelButton="No",
-            dismissString="No",
+        deformedShape = cmds.skinCluster(skn, q=True, geometry=True)
+        prt = (
+            cmds.listRelatives(deformedShape, path=-True, parent=True)[0]
+            if not cmds.nodeType(deformedShape) == "transform"
+            else deformedShape
         )
-        if res == "Yes":
-            cmds.skinCluster(skn, edit=True, lockWeights=False, weight=0.0, addInfluence=toAdd)
-            """
-            toSelect = range(self.uiInfluenceTREE.topLevelItemCount(), self.uiInfluenceTREE.topLevelItemCount()+len(toAdd))
-            cmds.evalDeferred(self.selectRefresh)
-            cmds.evalDeferred(partial(self.reselectIndices,toSelect))
-            """
+        if prt in sel:
+            sel.remove(prt)
 
-
-def removeUnusedInfluences(self):
-    skn = cmds.brSkinBrushContext("brSkinBrushContext1", q=True, skinClusterName=True)
-    if skn:
-        allInfluences = set(cmds.skinCluster(skn, query=True, influence=True))
-        weightedInfluences = set(cmds.skinCluster(skn, query=True, weightedInfluence=True))
-        zeroInfluences = list(allInfluences - weightedInfluences)
-        if zeroInfluences:
-            toRmvStr = "\n - ".join(zeroInfluences[:10])
-            if len(zeroInfluences) > 10:
-                toRmvStr += "\n -....and {0} others..... ".format(len(zeroInfluences) - 10)
+        allInfluences = cmds.skinCluster(skn, query=True, influence=True)
+        toAdd = filter(lambda x: x not in allInfluences, sel)
+        if toAdd:
+            toAddStr = "add Influences :\n - "
+            toAddStr += "\n - ".join(toAdd[:10])
+            if len(toAdd) > 10:
+                toAddStr += "\n -....and {0} others..... ".format(len(toAdd) - 10)
 
             res = cmds.confirmDialog(
-                t="remove Influences",
-                m="remove Unused Influences :\n - {0}".format(toRmvStr),
+                t="add Influences",
+                m=toAddStr,
                 button=["Yes", "No"],
                 defaultButton="Yes",
                 cancelButton="No",
                 dismissString="No",
             )
             if res == "Yes":
-                self.delete_btn.click()
-                cmds.skinCluster(skn, e=True, removeInfluence=zeroInfluences)
+                cmds.skinCluster(skn, edit=True, lockWeights=False, weight=0.0, addInfluence=toAdd)
+                """
+                toSelect = range(self.uiInfluenceTREE.topLevelItemCount(), self.uiInfluenceTREE.topLevelItemCount()+len(toAdd))
                 cmds.evalDeferred(self.selectRefresh)
+                cmds.evalDeferred(partial(self.reselectIndices,toSelect))
+                """
+
+
+def removeUnusedInfluences(self):
+    with UndoContext("removeUnusedInfluences"):
+        skn = cmds.brSkinBrushContext("brSkinBrushContext1", q=True, skinClusterName=True)
+        if skn:
+            allInfluences = set(cmds.skinCluster(skn, query=True, influence=True))
+            weightedInfluences = set(cmds.skinCluster(skn, query=True, weightedInfluence=True))
+            zeroInfluences = list(allInfluences - weightedInfluences)
+            if zeroInfluences:
+                toRmvStr = "\n - ".join(zeroInfluences[:10])
+                if len(zeroInfluences) > 10:
+                    toRmvStr += "\n -....and {0} others..... ".format(len(zeroInfluences) - 10)
+
+                res = cmds.confirmDialog(
+                    t="remove Influences",
+                    m="remove Unused Influences :\n - {0}".format(toRmvStr),
+                    button=["Yes", "No"],
+                    defaultButton="Yes",
+                    cancelButton="No",
+                    dismissString="No",
+                )
+                if res == "Yes":
+                    self.delete_btn.click()
+                    cmds.skinCluster(skn, e=True, removeInfluence=zeroInfluences)
+                    cmds.evalDeferred(self.selectRefresh)
 
 
 def doRemoveColorSets():
-    with disableUndoContext():
+    with UndoContext("doRemoveColorSets"):
         msh = mel.eval("global string $gSkinBrushMesh; $tmp = $gSkinBrushMesh;")
         if cmds.objExists(msh):
             skinnedMesh_history = cmds.listHistory(msh, lv=0, pruneDagObjects=True) or []
@@ -201,7 +222,7 @@ def doRemoveColorSets():
 
 
 def createWireframe(meshNode, hideOther=True, valAlpha=0.25):
-    with disableUndoContext():
+    with UndoContext("createWireframe"):
         if hideOther:
             wireDisplay = cmds.listRelatives(meshNode, s=True, path=True, type="wireframeDisplay")
             if wireDisplay:
@@ -228,7 +249,7 @@ def createWireframe(meshNode, hideOther=True, valAlpha=0.25):
 
 
 def getMeshTransfrom():
-    with disableUndoContext():
+    with UndoContext("getMeshTransfrom"):
         currentContext = cmds.currentCtx()
         mshShape = cmds.brSkinBrushContext(currentContext, query=True, meshName=True)
         if mshShape and cmds.objExists(mshShape):
@@ -238,7 +259,7 @@ def getMeshTransfrom():
 
 
 def getShapesSelected(returnTransform=False):
-    with disableUndoContext():
+    with UndoContext("getShapesSelected"):
         typeSurf = ["mesh", "nurbsSurface"]
         selectionShapes = cmds.ls(sl=True, o=True, type=typeSurf)
         if not selectionShapes:
@@ -256,7 +277,7 @@ def getShapesSelected(returnTransform=False):
 
 
 def addLockVerticesAttribute():  # not used
-    with disableUndoContext():
+    with UndoContext("addLockVerticesAttribute"):
         currentContext = cmds.currentCtx()
         mshShape = cmds.brSkinBrushContext(currentContext, query=True, meshName=True)
         if not cmds.attributeQuery("lockedVertices", node=mshShape, exists=True):
@@ -264,7 +285,7 @@ def addLockVerticesAttribute():  # not used
 
 
 def addControllersToJoints():
-    with disableUndoContext():
+    with UndoContext("addControllersToJoints"):
         allJnts = cmds.ls(type="joint")
         for jnt in allJnts:
             if not cmds.listConnections(jnt, type="controller"):
@@ -281,7 +302,7 @@ def fnFonts(txt):
 
 
 def setToDgMode():
-    with disableUndoContext():
+    with UndoContext("setToDgMode"):
         goodMode = "off"  # "serial" anmd "serialUncached" and "parallel" crashes
         if cmds.evaluationManager(q=True, mode=True) != [goodMode]:
             val = cmds.optionVar(q="evaluationMode")
@@ -296,7 +317,7 @@ def setToDgMode():
 
 
 def retrieveParallelMode():
-    with disableUndoContext():
+    with UndoContext("retrieveParallelMode"):
         val = cmds.optionVar(q="revertParallelEvaluationMode")
         if val != 0:
             cmds.optionVar(intValue=["revertParallelEvaluationMode", 0])
@@ -305,7 +326,7 @@ def retrieveParallelMode():
 
 
 def toolOnSetupStart():
-    with disableUndoContext():
+    with UndoContext("toolOnSetupStart"):
         cmds.optionVar(intValue=["startTime", time.time()])
 
         setToDgMode()
@@ -525,14 +546,14 @@ def toolOnSetupEndDeferred():
 
 
 def toolOnSetupEnd():
-    with disableUndoContext():
+    with UndoContext("toolOnSetupEnd"):
         toolOnSetupEndDeferred()
     cleanOpenUndo()
     # cmds.evalDeferred(toolOnSetupEndDeferred)
 
 
 def toolOffCleanup():
-    with disableUndoContext():
+    with UndoContext("toolOffCleanup"):
         toolOffCleanupDeferred()
 
 
@@ -583,14 +604,10 @@ def addWireFrameToMesh():
 
 
 def updateWireFrameColorSoloMode(soloColor):
+    # with UndoContext("updateWireFrameColorSoloMode"):
     with disableUndoContext():
-        ctx = cmds.currentCtx()
-        # soloColor = cmds.brSkinBrushContext(ctx, q=True, soloColor=True  )
         if cmds.objExists("SkinningWireframeShape"):
-            if not soloColor:
-                overrideColorRGB = [0.1, 0.1, 0.1]
-            else:
-                overrideColorRGB = [0.8, 0.8, 0.8]
+            overrideColorRGB = [0.8, 0.8, 0.8] if soloColor else [0.1, 0.1, 0.1]
             cmds.setAttr("SkinningWireframeShape.overrideEnabled", 1)
             cmds.setAttr("SkinningWireframeShape.overrideRGBColors", 1)
             cmds.setAttr("SkinningWireframeShape.overrideColorRGB", *overrideColorRGB)
@@ -603,7 +620,7 @@ def doUpdateWireFrameColorSoloMode():
 
 
 def setSoloMode(soloColor):
-    with disableUndoContext():
+    with UndoContext("setSoloMode"):
         ctx = cmds.currentCtx()
         cmds.brSkinBrushContext(ctx, e=True, soloColor=soloColor)
         updateWireFrameColorSoloMode(soloColor)
@@ -618,151 +635,158 @@ def toggleSoloMode():
 
 
 def fixOptionVarContext(**inputKargsToChange):
-    kwargs = OrderedDict()
-    if cmds.optionVar(exists="brSkinBrushContext1"):
-        cmd = cmds.optionVar(q="brSkinBrushContext1")
-        # remove command name and command object at the end : brSkinBrushContext anmd brSkinBrushContext1;
-        splitofspaces = cmd.split(" ")
-        cmd2 = " ".join(splitofspaces[1:-1])
-        spl = cmd2.split("-")
-        hlp = cmds.help("brSkinBrushContext")
+    with UndoContext("fixOptionVarContext"):
+        kwargs = OrderedDict()
+        if cmds.optionVar(exists="brSkinBrushContext1"):
+            cmd = cmds.optionVar(q="brSkinBrushContext1")
+            # remove command name and command object at the end : brSkinBrushContext anmd brSkinBrushContext1;
+            splitofspaces = cmd.split(" ")
+            cmd2 = " ".join(splitofspaces[1:-1])
+            spl = cmd2.split("-")
+            hlp = cmds.help("brSkinBrushContext")
 
-        dicOfName = {}
-        dicExpectedArgs = {}
-        lsMulti = set()
-        for ln in hlp.split("\n"):
-            for expectedStuff in [
-                "(Query Arg Mandatory)",
-                "(Query Arg Optional)",
-                "[...]",
-                "(Query Arg Optional)",
-            ]:
-                ln = ln.replace(expectedStuff, "")
-            ln = ln.strip()
-            res = ln.split()
-            if len(res) >= 2 and res[0].startswith("-") and res[1].startswith("-"):
-                nmFlag = res[1][1:]
-                dicOfName[res[0][1:]] = nmFlag
-                dicOfName[res[1][1:]] = nmFlag
-                if "(multi-use)" in res:
-                    lsMulti.add(nmFlag)
-                    res.remove("(multi-use)")
-                finishVal = res[2:]
-                dicExpectedArgs[nmFlag] = res[2:]
-        newSpl = []
-        for lne in spl:
-            lineSplit = lne.strip().split(" ")
+            dicOfName = {}
+            dicExpectedArgs = {}
+            lsMulti = set()
+            for ln in hlp.split("\n"):
+                for expectedStuff in [
+                    "(Query Arg Mandatory)",
+                    "(Query Arg Optional)",
+                    "[...]",
+                    "(Query Arg Optional)",
+                ]:
+                    ln = ln.replace(expectedStuff, "")
+                ln = ln.strip()
+                res = ln.split()
+                if len(res) >= 2 and res[0].startswith("-") and res[1].startswith("-"):
+                    nmFlag = res[1][1:]
+                    dicOfName[res[0][1:]] = nmFlag
+                    dicOfName[res[1][1:]] = nmFlag
+                    if "(multi-use)" in res:
+                        lsMulti.add(nmFlag)
+                        res.remove("(multi-use)")
+                    finishVal = res[2:]
+                    dicExpectedArgs[nmFlag] = res[2:]
+            newSpl = []
+            for lne in spl:
+                lineSplit = lne.strip().split(" ")
 
-            if len(lineSplit) > 1:
-                kArg = "-" + lineSplit[0]
-                if kArg not in hlp:
-                    continue
+                if len(lineSplit) > 1:
+                    kArg = "-" + lineSplit[0]
+                    if kArg not in hlp:
+                        continue
+                    else:
+                        value = " ".join(lineSplit[1:])
+                        value = value.strip()
+                        if value.startswith('"') and value.endswith('"'):
+                            value = value[1:-1]
+                        kwargs[dicOfName[lineSplit[0]]] = value
                 else:
-                    value = " ".join(lineSplit[1:])
-                    value = value.strip()
-                    if value.startswith('"') and value.endswith('"'):
-                        value = value[1:-1]
-                    kwargs[dicOfName[lineSplit[0]]] = value
-            else:
-                if lineSplit[0] in dicOfName:
-                    kwargs[dicOfName[lineSplit[0]]] = True
-            newSpl.append(lne)
-        # now rebuild command ---------------------------------
-        kwargs.update(inputKargsToChange)
-        cmdNew = "brSkinBrushContext "
-        for key, value in kwargs.iteritems():
-            if isinstance(value, bool):
-                cmdNew += "-{} ".format(key)
-            else:
-                try:
-                    float(value)
-                    cmdNew += "-{} {} ".format(key, value)
-                except ValueError:
-                    cmdNew += '-{} "{}" '.format(key, value)
-        cmdNew += splitofspaces[-1]
-        # cmdNew = "brSkinBrushContext -" + "-".join(newSpl)
-        cmds.optionVar(stringValue=["brSkinBrushContext1", cmdNew])
-    return kwargs
+                    if lineSplit[0] in dicOfName:
+                        kwargs[dicOfName[lineSplit[0]]] = True
+                newSpl.append(lne)
+            # now rebuild command ---------------------------------
+            kwargs.update(inputKargsToChange)
+            cmdNew = "brSkinBrushContext "
+            for key, value in kwargs.iteritems():
+                if isinstance(value, bool):
+                    cmdNew += "-{} ".format(key)
+                else:
+                    try:
+                        float(value)
+                        cmdNew += "-{} {} ".format(key, value)
+                    except ValueError:
+                        cmdNew += '-{} "{}" '.format(key, value)
+            cmdNew += splitofspaces[-1]
+            # cmdNew = "brSkinBrushContext -" + "-".join(newSpl)
+            cmds.optionVar(stringValue=["brSkinBrushContext1", cmdNew])
+        return kwargs
 
 
 def deleteExistingColorSets():
-    sel = cmds.ls(sl=True)
-    for obj in sel:
-        skinnedMesh_history = cmds.listHistory(obj, lv=0, pruneDagObjects=True) or []
-        cmds.setAttr(obj + ".displayColors", 0)
-        res = cmds.ls(skinnedMesh_history, type=["createColorSet", "deleteColorSet"])
-        if res:
-            cmds.delete(res)
-        existingColorSets = cmds.polyColorSet(obj, q=True, allColorSets=True) or []
-        for colSet in ["multiColorsSet", "multiColorsSet2", "soloColorsSet", "soloColorsSet2"]:
-            if colSet in existingColorSets:
-                cmds.polyColorSet(obj, delete=True, colorSet=colSet)
+    with UndoContext("deleteExistingColorSets"):
+        sel = cmds.ls(sl=True)
+        for obj in sel:
+            skinnedMesh_history = cmds.listHistory(obj, lv=0, pruneDagObjects=True) or []
+            cmds.setAttr(obj + ".displayColors", 0)
+            res = cmds.ls(skinnedMesh_history, type=["createColorSet", "deleteColorSet"])
+            if res:
+                cmds.delete(res)
+            existingColorSets = cmds.polyColorSet(obj, q=True, allColorSets=True) or []
+            for colSet in ["multiColorsSet", "multiColorsSet2", "soloColorsSet", "soloColorsSet2"]:
+                if colSet in existingColorSets:
+                    cmds.polyColorSet(obj, delete=True, colorSet=colSet)
 
 
 ######################### --------------CALL FROM BRUSH------------------------- ###############################################
 def cleanOpenUndo():
-    print "CALL cleanOpenUndo"
+    print "CALL cleanOpenUndo - pass"
     # cmds.undoInfo(state=False)
-    cmds.undoInfo(chunkName="StartSkinBrush", openChunk=True)
+    # cmds.undoInfo(chunkName="StartSkinBrush", openChunk=True)
 
 
 def cleanCloseUndo():
-    print "CALL cleanCloseUndo"
+    print "CALL cleanCloseUndo - pass"
     # cmds.undoInfo(state=True)
-    cmds.undoInfo(closeChunk=True)
-    cmds.flushUndo()
+    # cmds.undoInfo(closeChunk=True)
+    # cmds.flushUndo()
 
 
 def getPaintEditor():
-    import __main__
+    with UndoContext("getPaintEditor"):
+        import __main__
 
-    if hasattr(__main__, "paintEditor") and __main__.paintEditor.isVisible():
-        return __main__.paintEditor
-    return None
+        if hasattr(__main__, "paintEditor") and __main__.paintEditor.isVisible():
+            return __main__.paintEditor
+        return None
 
 
 def afterPaint():
-    import __main__
-    from Qt.QtWidgets import QApplication
+    with UndoContext("afterPaint"):
+        import __main__
+        from Qt.QtWidgets import QApplication
 
-    if (
-        hasattr(__main__, "weightEditor")
-        and __main__.weightEditor in QApplication.instance().topLevelWidgets()
-    ):
-        __main__.weightEditor.refreshSkinDisplay()
+        if (
+            hasattr(__main__, "weightEditor")
+            and __main__.weightEditor in QApplication.instance().topLevelWidgets()
+        ):
+            __main__.weightEditor.refreshSkinDisplay()
 
 
 def callPaintEditorFunction(function, *args, **kwargs):
-    paintEditor = getPaintEditor()
-    if paintEditor and hasattr(paintEditor, function):
-        fn = getattr(paintEditor, function)
-        if callable(fn):
-            return fn(*args, **kwargs)
-        else:
-            return fn
-    return None
+    with UndoContext("callPaintEditorFunction"):
+        paintEditor = getPaintEditor()
+        if paintEditor and hasattr(paintEditor, function):
+            fn = getattr(paintEditor, function)
+            if callable(fn):
+                return fn(*args, **kwargs)
+            else:
+                return fn
+        return None
 
 
 def headsUpMessage(offsetX, offsetY, message, valueDisplay, precision):
-    theMessage = "{}: {:.{}f}".format(message, valueDisplay, precision)
-    cmds.headsUpMessage(theMessage, horizontalOffset=offsetX, verticalOffset=offsetY, time=0.1)
+    with UndoContext("headsUpMessage"):
+        theMessage = "{}: {:.{}f}".format(message, valueDisplay, precision)
+        cmds.headsUpMessage(theMessage, horizontalOffset=offsetX, verticalOffset=offsetY, time=0.1)
 
 
 def pickedInfluence(jointName):
-    # print "pickedInfluence from python 2.0"
-    if cmds.treeView("brSkinBrushJointTree", q=True, ex=True):
-        cmds.treeView("brSkinBrushJointTree", edit=True, clearSelection=True)
-        cmds.treeView("brSkinBrushJointTree", edit=True, showItem=jointName)
-        mel.eval(
-            'global string $gSkinBrushInfluenceSelection[];    $gSkinBrushInfluenceSelection = { "'
-            + jointName
-            + '" };'
-        )
-    callPaintEditorFunction("updateCurrentInfluence", jointName)
+    with UndoContext("pickedInfluence"):
+        # print "pickedInfluence from python 2.0"
+        if cmds.treeView("brSkinBrushJointTree", q=True, ex=True):
+            cmds.treeView("brSkinBrushJointTree", edit=True, clearSelection=True)
+            cmds.treeView("brSkinBrushJointTree", edit=True, showItem=jointName)
+            mel.eval(
+                'global string $gSkinBrushInfluenceSelection[];    $gSkinBrushInfluenceSelection = { "'
+                + jointName
+                + '" };'
+            )
+        callPaintEditorFunction("updateCurrentInfluence", jointName)
 
 
 def updateDisplayStrengthOrSize(sizeAdjust, value):
-    with disableUndoContext():
+    with UndoContext("updateDisplayStrengthOrSize"):
         fsg = "brSkinBrushSize" if sizeAdjust else "brSkinBrushStrength"
         if cmds.floatSliderGrp(fsg, q=True, ex=True):
             cmds.floatSliderGrp(fsg, e=True, value=value)
