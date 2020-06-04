@@ -666,6 +666,8 @@ class SkinPaintWin(Window):
                     importPython = "from mPaintEditor.brushTools.brushPythonFunctions import "
                     context = cmds.brSkinBrushContext(context, importPython=importPython)
                 # getMirrorInfluenceArray
+                # let's select the shape first
+                cmds.select(self.dataOfSkin.deformedShape, r=True)
                 cmds.setToolTo(context)
                 mel.eval("rememberCtxSettings " + context)
                 self.getMirrorInfluenceArray()
