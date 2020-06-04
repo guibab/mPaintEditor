@@ -306,8 +306,6 @@ def retrieveParallelMode():
 
 def toolOnSetupStart():
     with disableUndoContext():
-        cleanOpenUndo()
-
         cmds.optionVar(intValue=["startTime", time.time()])
 
         setToDgMode()
@@ -371,7 +369,7 @@ def createMeshFromNurbs(att, prt):
     cmds.setAttr(nurbsTessellate + ".matchNormalDir", 1)
     cmds.connectAttr(att, nurbsTessellate + ".inputSurface", f=True)  # ".worldSpace[0]"
 
-    msh = cmds.createNode("mesh", p=prt, skipSelect=True, n="msh")
+    msh = cmds.createNode("mesh", p=prt, skipSelect=True, n="brushTmpDELETEthisMesh")
     cmds.connectAttr(nurbsTessellate + ".outputPolygon", msh + ".inMesh", f=True)
 
     # cmds.setAttr(msh + ".smoothLevel", 3)
@@ -442,7 +440,7 @@ def disconnectNurbs():
         )
         mshs = cmds.listRelatives(prt, type="mesh", path=True)
         for msh in mshs:
-            tesselates = cmds.listConnections(msh, type="nurbsTessellate") or []
+            tesselates = cmds.ls(cmds.listHistory(msh), type="nurbsTessellate") or []
             if tesselates:
                 toDelete.extend(tesselates)
         # setSkinCluster(prt, True)
@@ -457,12 +455,23 @@ def showBackNurbs(theMesh):
         if cmds.attributeQuery("origMeshNurbs", n=msh, ex=True):
             toDelete.append(msh)
     cmds.delete(toDelete)
-
     for nrbs in shps:
         if cmds.attributeQuery("nurbsTessellate", n=nrbs, ex=True):
             cmds.deleteAttr(nrbs + ".nurbsTessellate")
     if shps:
         cmds.showHidden(shps)
+
+
+def cleanTheNurbs(force=False):
+    if cmds.currentCtx() != "brSkinBrushContext1" or force:
+        nurbsTessellateAttrs = cmds.ls("*.nurbsTessellate")
+        if nurbsTessellateAttrs:
+            nurbsTessellateAttrsNodes = [
+                el.split(".nurbsTessellate")[0] for el in nurbsTessellateAttrs
+            ]
+            prts = set(cmds.listRelatives(nurbsTessellateAttrsNodes, p=True, path=True))
+            for prt in prts:
+                showBackNurbs(prt)
 
 
 def deferredDisconnect(mshTesselate, msh):
@@ -518,6 +527,7 @@ def toolOnSetupEndDeferred():
 def toolOnSetupEnd():
     with disableUndoContext():
         toolOnSetupEndDeferred()
+    cleanOpenUndo()
     # cmds.evalDeferred(toolOnSetupEndDeferred)
 
 
@@ -693,14 +703,14 @@ def deleteExistingColorSets():
 def cleanOpenUndo():
     print "CALL cleanOpenUndo"
     # cmds.undoInfo(state=False)
-    # cmds.undoInfo(chunkName="StartSkinBrush", openChunk=True)
+    cmds.undoInfo(chunkName="StartSkinBrush", openChunk=True)
 
 
 def cleanCloseUndo():
     print "CALL cleanCloseUndo"
     # cmds.undoInfo(state=True)
+    cmds.undoInfo(closeChunk=True)
     cmds.flushUndo()
-    # cmds.undoInfo(closeChunk=True)
 
 
 def getPaintEditor():

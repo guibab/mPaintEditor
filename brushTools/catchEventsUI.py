@@ -372,10 +372,10 @@ class CatchEventsWidget(QtWidgets.QWidget):
             elif event.key() == QtCore.Qt.Key_Escape:
                 with disableUndoContext():
                     escapePressed()
-                event.ignore()
-                # self.close()
-                mel.eval("setToolTo $gMove;")
-                return True
+                    event.ignore()
+                    # self.close()
+                    mel.eval("setToolTo $gMove;")
+                    return True
             elif event.key() == QtCore.Qt.Key_D:
                 with disableUndoContext():
                     listModelPanels = [
