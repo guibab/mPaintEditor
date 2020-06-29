@@ -680,7 +680,10 @@ def fixOptionVarContext(**inputKargsToChange):
                         value = value.strip()
                         if value.startswith('"') and value.endswith('"'):
                             value = value[1:-1]
-                        kwargs[dicOfName[lineSplit[0]]] = value
+                        if lineSplit[0] in dicOfName:
+                            keyToCheck = dicOfName[lineSplit[0]]
+                            if keyToCheck in kwargs:
+                                kwargs[keyToCheck] = value
                 else:
                     if lineSplit[0] in dicOfName:
                         kwargs[dicOfName[lineSplit[0]]] = True
