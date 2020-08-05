@@ -1650,7 +1650,7 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         # return self._colors[cmds.getAttr(self._influence+'.objectColor')]
 
     def lockIcon(self):
-        return Icons.getIcon("lock") if self.isLocked() else Icons.getIcon("lock-gray-unlocked")
+        return getIcon("lock-gray-locked") if self.isLocked() else getIcon("lock-gray-unlocked")
 
     def colorIcon(self):
         pixmap = QtGui.QPixmap(24, 24)
