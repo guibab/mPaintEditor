@@ -4,7 +4,7 @@ self = __main__.paintEditor
 """
 # from mPaintEditor.brushTools.brushPythonFunctions import *
 
-from Qt import QtGui, QtCore, QtWidgets, QtCompat
+from Qt import QtGui, QtCore, QtWidgets
 
 # import shiboken2 as shiboken
 from functools import partial
@@ -14,11 +14,10 @@ from blurdev.gui import Window
 import os
 import re
 import numpy as np
-from studio.gui.resource import Icons
 from dcc.maya.skinCluster import cmdSkinCluster
 
 from mWeightEditor.tools.skinData import DataOfSkin
-from mWeightEditor.tools.spinnerSlider import ValueSetting, ButtonWithValue, VerticalBtn
+from mWeightEditor.tools.spinnerSlider import ValueSetting
 from mWeightEditor.tools.utils import (
     GlobalContext,
     toggleBlockSignals,
@@ -28,9 +27,7 @@ from mWeightEditor.tools.utils import (
     SettingVariable,
 )
 
-from brushTools.catchEventsUI import CatchEventsWidget, rootWindow
 from brushTools.brushPythonFunctions import (
-    disableUndoContext,
     UndoContext,
     setColorsOnJoints,
     fixOptionVarContext,
