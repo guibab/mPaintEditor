@@ -166,7 +166,7 @@ QSplitter::handle {
 }
 QSplitter::handle::hover {
     border-radius: 5px;
-    border: 1px solid lightGray; 
+    border: 1px solid lightGray;
     background-color:  gray;
 }
 QLineEdit{
@@ -188,9 +188,9 @@ QPushButton:checked{
     color:white;
     border: none;
 }
-QPushButton:hover{ 
+QPushButton:hover{
     background-color: grey;
-    border-style: outset; 
+    border-style: outset;
 }
 QPushButton:pressed {
     background-color: rgb(130, 130, 130);
@@ -278,13 +278,14 @@ class SkinPaintWin(Window):
         self.createWindow()
         self.addShortCutsHelp()
 
-        self.setStyleSheet(styleSheet)
+        self.setStyleSheet("")
         self.setWindowDisplay()
 
         self.buildRCMenu()
         self.createColorPicker()
         self.uiInfluenceTREE.clear()
         self.refresh()
+        self.setStyleSheet(styleSheet)
 
     def addShortCutsHelp(self):
         for nm1, nm2 in lstShortCuts:
