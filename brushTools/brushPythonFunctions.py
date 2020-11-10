@@ -45,6 +45,7 @@ class UndoContext(object):
     """
 
     def __init__(self, chunkName="myProcessTrue"):
+        # print "   [paintEditor] - ",chunkName
         self.chunkName = chunkName
 
     def __enter__(self):
@@ -600,7 +601,7 @@ def addWireFrameToMesh():
         return
     theMesh = cmds.ls(sl=True, tr=True)[0]  # getMeshTransfrom()
     # print currentContext, theMesh
-    createWireframe(theMesh)
+    # createWireframe(theMesh)
 
 
 def updateWireFrameColorSoloMode(soloColor):

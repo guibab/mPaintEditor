@@ -369,8 +369,12 @@ class SkinPaintWin(Window):
         """
         selectItems = self.popMenu.addAction("select node", partial(self.applyLock, "selJoints"))
         self.popMenu.addAction(selectItems)
-
         self.popMenu.addSeparator()
+
+        colorItems = self.popMenu.addAction("color selected", partial(self.randomColors, True))
+        self.popMenu.addAction(colorItems)
+        self.popMenu.addSeparator()
+
         lockSel = self.popMenu.addAction("lock Sel", partial(self.applyLock, "lockSel"))
         self.popMenu.addAction(lockSel)
         allButSel = self.popMenu.addAction(
@@ -669,8 +673,17 @@ class SkinPaintWin(Window):
                 # let's select the shape first
                 cmds.select(self.dataOfSkin.deformedShape, r=True)
                 cmds.setToolTo(context)
-                mel.eval("rememberCtxSettings " + context)
+                # try to fix bug
+                # mel.eval("rememberCtxSettings " + context)
                 self.getMirrorInfluenceArray()
+                # cmds.evalDeferred(self.setFocusToPanel)
+
+    def setFocusToPanel(self):
+        QtCore.QTimer.singleShot(10, self.parent().setFocus)
+        print "setFocusToPanel"
+        for panel in cmds.getPanel(vis=True):
+            if cmds.getPanel(to=panel) == "modelPanel":
+                cmds.setFocus(panel)
 
     def updateOptionEnable(self, toggleValue):
         setOn = self.smooth_btn.isChecked() or self.sharpen_btn.isChecked()
@@ -861,14 +874,22 @@ class SkinPaintWin(Window):
 
     valueMult, saturationMult = 0.6, 0.6
 
-    def randomColors(self):
+    def randomColors(self, selected=False):
         # self.delete_btn.click()
 
         golden_ratio_conjugate = 0.618033988749895
         s, v = 0.5, 0.95
         colors = []
-        for itemIndex in range(self.uiInfluenceTREE.topLevelItemCount()):
-            item = self.uiInfluenceTREE.topLevelItem(itemIndex)
+        lstItems = (
+            self.uiInfluenceTREE.selectedItems()
+            if selected
+            else [
+                self.uiInfluenceTREE.topLevelItem(itemIndex)
+                for itemIndex in range(self.uiInfluenceTREE.topLevelItemCount())
+            ]
+        )
+
+        for item in lstItems:
             nm = item._influence
             ind = item._index
             """
@@ -1149,6 +1170,22 @@ class SkinPaintWin(Window):
             self.__dict__[nm + "_btn"].setMinimumHeight(23)
         self.valueSetter.updateBtn()
         self.sizeBrushSetter.updateBtn()
+
+    def recordSettings(self):
+        pref = prefs.find("tools/mPaintEditor", shared=True)
+        pref.recordProperty("geom", self.geometry())
+
+        self.solo_rb.setChecked(True)
+        #                self.multi_rb.setChecked(True)
+        self.soloColor_cb.setCurrentIndex(int(KArgs["soloColorType"]))
+
+        pref.save()
+
+    def restoreSettings(self):
+        pref = prefs.find("tools/mPaintEditor", shared=True)
+        geom = pref.restoreProperty("geom", QtCore.QRect())
+        if geom and not geom.isNull():
+            self.setGeometry(geom)
 
     def updateUIwithContextValues(self):
         self.dgParallel_btn.setChecked(cmds.optionVar(q="evaluationMode") == 3)
