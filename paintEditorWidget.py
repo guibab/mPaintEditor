@@ -706,6 +706,32 @@ class SkinPaintWin(Window):
             self.sizeBrushSetter.setVal(value)
             self.sizeBrushSetter.theProgress.setValue(value)
 
+    def updateOrderOfInfluences(self, orderOfJoints):
+        allItems = dict(
+            [
+                (
+                    self.uiInfluenceTREE.topLevelItem(ind)._index,
+                    self.uiInfluenceTREE.topLevelItem(ind),
+                )
+                for ind in range(self.uiInfluenceTREE.topLevelItemCount())
+            ]
+        )
+        for i, influenceIndex in enumerate(orderOfJoints):
+            allItems[influenceIndex].setText(4, "{:09d}".format(i))
+        if self.orderType_cb.currentIndex() == 3:  # sorting
+            self.uiInfluenceTREE.sortByColumn(4, 0)
+        # print orderOfJoints
+
+    def sortByColumn(self, ind):
+        dicColumnCorrespondance = dict([(0, 3), (1, 1), (2, 2), (3, 4)])
+        self.uiInfluenceTREE.sortByColumn(dicColumnCorrespondance[ind], 0)
+        selItems = self.uiInfluenceTREE.selectedItems()
+        if selItems:
+            self.uiInfluenceTREE.scrollToItem(selItems[-1])
+        # column 2 is side alpha name
+        # column 3 is the default indices
+        # column 4 is the sorted by weight picked indices
+
     def updateCurrentInfluence(self, jointName):
         # print "updateCurrentInfluence {}".format(jointName)
         items = {}
@@ -962,6 +988,7 @@ class SkinPaintWin(Window):
         self.uiInfluenceTREE.itemDoubleClicked.connect(self.influenceDoubleClicked)
         self.uiInfluenceTREE.itemClicked.connect(self.influenceClicked)
 
+        self.orderType_cb.currentIndexChanged.connect(self.sortByColumn)
         self.option_btn.clicked.connect(self.displayOptions)
 
         self.addInfluences_btn.clicked.connect(self.addInfluences)
@@ -1171,9 +1198,10 @@ class SkinPaintWin(Window):
         self.valueSetter.updateBtn()
         self.sizeBrushSetter.updateBtn()
 
+    """
     def recordSettings(self):
-        pref = prefs.find("tools/mPaintEditor", shared=True)
-        pref.recordProperty("geom", self.geometry())
+        pref = prefs.find('tools/mPaintEditor', shared=True)
+        pref.recordProperty('geom', self.geometry())
 
         self.solo_rb.setChecked(True)
         #                self.multi_rb.setChecked(True)
@@ -1182,10 +1210,11 @@ class SkinPaintWin(Window):
         pref.save()
 
     def restoreSettings(self):
-        pref = prefs.find("tools/mPaintEditor", shared=True)
-        geom = pref.restoreProperty("geom", QtCore.QRect())
+        pref = prefs.find('tools/mPaintEditor', shared=True)
+        geom = pref.restoreProperty('geom', QtCore.QRect())
         if geom and not geom.isNull():
             self.setGeometry(geom)
+    """
 
     def updateUIwithContextValues(self):
         self.dgParallel_btn.setChecked(cmds.optionVar(q="evaluationMode") == 3)
@@ -1285,7 +1314,6 @@ class SkinPaintWin(Window):
     def pickMaxInfluence(self):
         if self.isInPaint():
             cmds.brSkinBrushContext("brSkinBrushContext1", edit=True, pickMaxInfluence=True)
-            print ("pickMaxInfluence")
 
     def pickInfluence(self, vertexPicking=False):
         if self.isInPaint():
@@ -1598,9 +1626,12 @@ class InfluenceTree(QtWidgets.QTreeWidget):
         super(InfluenceTree, self).__init__(*args)
         self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.setIndentation(5)
-        self.setColumnCount(2)
+        self.setColumnCount(5)
         self.header().hide()
         self.setColumnWidth(0, 20)
+        self.hideColumn(2)  # column 2 is side alpha name
+        self.hideColumn(3)  # column 3 is the default indices
+        self.hideColumn(4)  # column 4 is the sorted by weight picked indices
 
     def enterEvent(self, event):
         # print "enterEvent TREE"
@@ -1634,7 +1665,15 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
 
     def __init__(self, influence, index, col, skinCluster):
         shortName = influence.split(":")[-1]
-        super(InfluenceTreeWidgetItem, self).__init__(["", shortName])
+        # now sideAlpha
+        spl = shortName.split("_")
+        if len(spl) > 2:
+            spl.append(spl.pop(1))
+        sideAlphaName = "_".join(spl)
+
+        super(InfluenceTreeWidgetItem, self).__init__(
+            ["", shortName, sideAlphaName, "{:09d}".format(index), "{:09d}".format(index)]
+        )
         self._influence = influence
         self._index = index
         self._skinCluster = skinCluster

@@ -511,7 +511,8 @@ def callEventCatcher():
     import catchEventsUI
 
     # print catchEventsUI.__file__
-    reload(catchEventsUI)
+    if catchEventsUI.ROOTWINDOW is None:
+        catchEventsUI.ROOTWINDOW = catchEventsUI.rootWindow()
     catchEventsUI.EVENTCATCHER = catchEventsUI.CatchEventsWidget()
     catchEventsUI.EVENTCATCHER.open()
 
@@ -773,6 +774,11 @@ def headsUpMessage(offsetX, offsetY, message, valueDisplay, precision):
     with UndoContext("headsUpMessage"):
         theMessage = "{}: {:.{}f}".format(message, valueDisplay, precision)
         cmds.headsUpMessage(theMessage, horizontalOffset=offsetX, verticalOffset=offsetY, time=0.1)
+
+
+def orderedInfluence(strl):
+    orderOfJoints = map(int, strl[:-1].split(" "))
+    callPaintEditorFunction("updateOrderOfInfluences", orderOfJoints)
 
 
 def pickedInfluence(jointName):

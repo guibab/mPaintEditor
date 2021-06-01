@@ -83,7 +83,7 @@ class Orbit(object):
         face_idx = face_idx_util.getInt(face_int_ptr)
         return (hit_point, face_idx)
 
-    def getValues(self, node):
+    def getValues(self, node, returnVertex=False):
         meshShpList = cmds.listRelatives(node, s=True, type="mesh")
         self.active_view = self.getTheM3dView()
         if meshShpList:
@@ -95,6 +95,14 @@ class Orbit(object):
             self.meshFn = self.getMeshFn(self.meshName)
             worldPos = QtGui.QCursor.pos()
             hit_pnt, face_idx = self.getClosestVert(worldPos)
+
+            arr = OpenMaya.MIntArray()
+            self.meshFn.getPolygonVertices(face_idx, arr)
+            theVert = arr[0]
+            if returnVertex:
+                return theVert
+            # print "cmds.select (\"{}.vtx[{}]\", r=True)".format(self.meshName, theVert)
+
             # hit_pnt = cmds.xform("{}.f[{}]".format(node, face_idx), q=True, ws=True, t=True)
             # return hit_pnt[:3]
             return [hit_pnt.x, hit_pnt.y, hit_pnt.z]

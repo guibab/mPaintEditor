@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>289</width>
+    <width>354</width>
     <height>879</height>
    </rect>
   </property>
@@ -983,12 +983,6 @@ p, li { white-space: pre-wrap; }
           <attribute name="headerDefaultSectionSize">
            <number>20</number>
           </attribute>
-          <attribute name="headerDefaultSectionSize">
-           <number>20</number>
-          </attribute>
-          <attribute name="headerVisible">
-           <bool>false</bool>
-          </attribute>
           <column>
            <property name="text">
             <string notr="true">1</string>
@@ -1066,6 +1060,51 @@ p, li { white-space: pre-wrap; }
            </widget>
           </item>
           <item>
+           <widget class="QComboBox" name="orderType_cb">
+            <property name="minimumSize">
+             <size>
+              <width>60</width>
+              <height>18</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>200</width>
+              <height>18</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;order columns&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="currentIndex">
+             <number>3</number>
+            </property>
+            <property name="frame">
+             <bool>true</bool>
+            </property>
+            <item>
+             <property name="text">
+              <string>Sort Default</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Sort Alphabetical</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Sort Side Alphabetical</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Sort Picked Value</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
            <spacer name="horizontalSpacer_3">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -1087,7 +1126,7 @@ p, li { white-space: pre-wrap; }
              </size>
             </property>
             <property name="text">
-             <string>options</string>
+             <string>▼ options ▼</string>
             </property>
            </widget>
           </item>
@@ -1179,8 +1218,8 @@ p, li { white-space: pre-wrap; }
         <property name="geometry">
          <rect>
           <x>0</x>
-          <y>-239</y>
-          <width>252</width>
+          <y>0</y>
+          <width>317</width>
           <height>681</height>
          </rect>
         </property>
@@ -1808,9 +1847,6 @@ p, li { white-space: pre-wrap; }
               <property name="columnCount">
                <number>2</number>
               </property>
-              <attribute name="headerStretchLastSection">
-               <bool>true</bool>
-              </attribute>
               <attribute name="headerStretchLastSection">
                <bool>true</bool>
               </attribute>
