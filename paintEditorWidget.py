@@ -5,6 +5,7 @@ self = __main__.paintEditor
 # from mPaintEditor.brushTools.brushPythonFunctions import *
 
 from __future__ import print_function
+from __future__ import absolute_import
 from Qt import QtGui, QtCore, QtWidgets
 
 # import shiboken2 as shiboken
@@ -28,7 +29,7 @@ from mWeightEditor.tools.utils import (
     SettingVariable,
 )
 
-from brushTools.brushPythonFunctions import (
+from .brushTools.brushPythonFunctions import (
     UndoContext,
     setColorsOnJoints,
     fixOptionVarContext,

@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import absolute_import
 
 try:
     from Qt import QtGui, QtCore, QtWidgets
@@ -10,13 +11,13 @@ except:
     from PySide2.QtWidgets import QApplication, QSplashScreen, QDialog, QMainWindow
 from maya import OpenMayaUI, cmds, mel
 import time
-from brushPythonFunctions import (
+from .brushPythonFunctions import (
     callPaintEditorFunction,
     escapePressed,
     toggleSoloMode,
     disableUndoContext,
 )
-import meshFnIntersection
+from . import meshFnIntersection
 
 EVENTCATCHER = None
 ROOTWINDOW = None
