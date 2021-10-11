@@ -108,6 +108,8 @@ def getIcon(iconNm):
 
 
 _icons = {
+    "lockedIcon": getIcon("lock-gray-locked"),
+    "unLockIcon": getIcon("lock-gray-unlocked"),
     "lock": getIcon("lock-48"),
     "unlock": getIcon("unlock-48"),
     "del": getIcon("delete_sign-16"),
@@ -254,6 +256,7 @@ class SkinPaintWin(Window):
     # EVENTCATCHER = None
 
     def __init__(self, parent=None):
+        self.doPrint = False
         super(SkinPaintWin, self).__init__(parent)
         import __main__
 
@@ -270,9 +273,10 @@ class SkinPaintWin(Window):
             if cmds.optionVar(exists="useShortestNames")
             else True
         )
-        self.dataOfSkin = DataOfSkin(
-            useShortestNames=self.useShortestNames, createDisplayLocator=False
-        )
+        with GlobalContext(message="create dataOfSkin", doPrint=self.doPrint):
+            self.dataOfSkin = DataOfSkin(
+                useShortestNames=self.useShortestNames, createDisplayLocator=False
+            )
         self.dataOfSkin.softOn = False
 
         self.createWindow()
@@ -1217,77 +1221,78 @@ class SkinPaintWin(Window):
     """
 
     def updateUIwithContextValues(self):
-        self.dgParallel_btn.setChecked(cmds.optionVar(q="evaluationMode") == 3)
+        with GlobalContext(message="updateUIwithContextValues", doPrint=self.doPrint):
+            self.dgParallel_btn.setChecked(cmds.optionVar(q="evaluationMode") == 3)
 
-        KArgs = fixOptionVarContext()
-        if "soloColor" in KArgs:
-            val = int(KArgs["soloColor"])
-            if val:
-                self.solo_rb.setChecked(True)
+            KArgs = fixOptionVarContext()
+            if "soloColor" in KArgs:
+                val = int(KArgs["soloColor"])
+                if val:
+                    self.solo_rb.setChecked(True)
+                else:
+                    self.multi_rb.setChecked(True)
+            if "soloColorType" in KArgs:
+                self.soloColor_cb.setCurrentIndex(int(KArgs["soloColorType"]))
+            sizeVal = 4.0
+            if "size" in KArgs:
+                sizeVal = float(KArgs["size"])
+            self.updateSizeVal(sizeVal)
+
+            if "strength" in KArgs:
+                self.strengthVarStored = float(KArgs["strength"])
             else:
-                self.multi_rb.setChecked(True)
-        if "soloColorType" in KArgs:
-            self.soloColor_cb.setCurrentIndex(int(KArgs["soloColorType"]))
-        sizeVal = 4.0
-        if "size" in KArgs:
-            sizeVal = float(KArgs["size"])
-        self.updateSizeVal(sizeVal)
+                self.strengthVarStored = 1.0
+            self.updateStrengthVal(self.strengthVarStored)
 
-        if "strength" in KArgs:
-            self.strengthVarStored = float(KArgs["strength"])
-        else:
-            self.strengthVarStored = 1.0
-        self.updateStrengthVal(self.strengthVarStored)
-
-        if "commandIndex" in KArgs:
-            commandIndex = int(KArgs["commandIndex"])
-            commandText = self.commandArray[commandIndex]
-            self.__dict__[commandText + "_btn"].setChecked(True)
-            if commandText in ["locks", "unLocks"]:
-                self.valueSetter.setEnabled(False)
-                self.widgetAbs.setEnabled(False)
-        if "mirrorPaint" in KArgs:
-            mirrorPaintIndex = int(KArgs["mirrorPaint"])
-            with toggleBlockSignals([self.uiSymmetryCB, self.mirrorActive_cb]):
-                self.uiSymmetryCB.setCurrentIndex(mirrorPaintIndex)
-                self.mirrorActive_cb.setChecked(mirrorPaintIndex != 0)
-        if "curve" in KArgs:
-            curveIndex = int(KArgs["curve"])
-            nm = ["curveNone", "curveLinear", "curveSmooth", "curveNarrow"][curveIndex]
-            thebtn = self.__dict__[nm + "_btn"]
-            thebtn.setChecked(True)
-        if "smoothStrength" in KArgs:
-            self.smoothStrengthVarStored = float(KArgs["smoothStrength"])
-        else:
-            self.smoothStrengthVarStored = 1.0
-        if self.smooth_btn.isChecked():
-            self.updateStrengthVal(self.smoothStrengthVarStored)
-        if "influenceName" in KArgs:
-            jointName = KArgs["influenceName"]
-            self.previousInfluenceName = jointName
-            self.updateCurrentInfluence(jointName)
-        if "useColorSetsWhilePainting" in KArgs:
-            val = bool(int(KArgs["useColorSetsWhilePainting"]))
-            if val:
-                self.colorSets_rb.setChecked(True)
+            if "commandIndex" in KArgs:
+                commandIndex = int(KArgs["commandIndex"])
+                commandText = self.commandArray[commandIndex]
+                self.__dict__[commandText + "_btn"].setChecked(True)
+                if commandText in ["locks", "unLocks"]:
+                    self.valueSetter.setEnabled(False)
+                    self.widgetAbs.setEnabled(False)
+            if "mirrorPaint" in KArgs:
+                mirrorPaintIndex = int(KArgs["mirrorPaint"])
+                with toggleBlockSignals([self.uiSymmetryCB, self.mirrorActive_cb]):
+                    self.uiSymmetryCB.setCurrentIndex(mirrorPaintIndex)
+                    self.mirrorActive_cb.setChecked(mirrorPaintIndex != 0)
+            if "curve" in KArgs:
+                curveIndex = int(KArgs["curve"])
+                nm = ["curveNone", "curveLinear", "curveSmooth", "curveNarrow"][curveIndex]
+                thebtn = self.__dict__[nm + "_btn"]
+                thebtn.setChecked(True)
+            if "smoothStrength" in KArgs:
+                self.smoothStrengthVarStored = float(KArgs["smoothStrength"])
             else:
-                self.drawManager_rb.setChecked(True)
-        if "smoothRepeat" in KArgs:
-            val = int(KArgs["smoothRepeat"])
-            self.smoothRepeat_spn.setValue(val)
-        if "minColor" in KArgs:
-            val = float(KArgs["minColor"])
-            self.minColor_sb.setValue(val)
-        if "maxColor" in KArgs:
-            val = float(KArgs["maxColor"])
-            self.maxColor_sb.setValue(val)
-        if "toleranceMirror" in KArgs:
-            val = float(KArgs["maxColor"])
-            self.uiTolerance_SB.setValue(val)
-        for att in self.listCheckBoxesDirectAction:
-            if att in KArgs:
-                val = bool(int(KArgs[att]))
-                self.__dict__[att + "_cb"].setChecked(val)
+                self.smoothStrengthVarStored = 1.0
+            if self.smooth_btn.isChecked():
+                self.updateStrengthVal(self.smoothStrengthVarStored)
+            if "influenceName" in KArgs:
+                jointName = KArgs["influenceName"]
+                self.previousInfluenceName = jointName
+                self.updateCurrentInfluence(jointName)
+            if "useColorSetsWhilePainting" in KArgs:
+                val = bool(int(KArgs["useColorSetsWhilePainting"]))
+                if val:
+                    self.colorSets_rb.setChecked(True)
+                else:
+                    self.drawManager_rb.setChecked(True)
+            if "smoothRepeat" in KArgs:
+                val = int(KArgs["smoothRepeat"])
+                self.smoothRepeat_spn.setValue(val)
+            if "minColor" in KArgs:
+                val = float(KArgs["minColor"])
+                self.minColor_sb.setValue(val)
+            if "maxColor" in KArgs:
+                val = float(KArgs["maxColor"])
+                self.maxColor_sb.setValue(val)
+            if "toleranceMirror" in KArgs:
+                val = float(KArgs["maxColor"])
+                self.uiTolerance_SB.setValue(val)
+            for att in self.listCheckBoxesDirectAction:
+                if att in KArgs:
+                    val = bool(int(KArgs[att]))
+                    self.__dict__[att + "_cb"].setChecked(val)
 
     def clearInputText(self):
         self.searchInfluences_le.clear()
@@ -1478,7 +1483,7 @@ class SkinPaintWin(Window):
 
     def refresh(self, force=False, renamedCalled=False):
         # print "refresh CALLED ", force
-        with GlobalContext(message="paintEditor getAllData", doPrint=False):
+        with GlobalContext(message="paintEditor getAllData", doPrint=self.doPrint):
             prevDataOfSkin = self.dataOfSkin.deformedShape, self.dataOfSkin.theDeformer
             resultData = self.dataOfSkin.getAllData(
                 displayLocator=False, getskinWeights=False, force=force
@@ -1523,20 +1528,23 @@ class SkinPaintWin(Window):
                 "option_GB",
             ]:
                 self.__dict__[uiObj].setEnabled(isPaintable)
-            for ind, nm in enumerate(self.dataOfSkin.driverNames):  # .shortDriverNames :
-                theIndexJnt = self.dataOfSkin.indicesJoints[ind]
-                theCol = self.uiInfluenceTREE.getDeformerColor(nm)
-                jointItem = InfluenceTreeWidgetItem(
-                    nm, theIndexJnt, theCol, self.dataOfSkin.theSkinCluster
-                )
-                # jointItem =  QtWidgets.QTreeWidgetItem()
-                # jointItem.setText(1, nm)
-                self.uiInfluenceTREE.addTopLevelItem(jointItem)
-                self.uiInfluenceTREE.dicWidgName[nm] = jointItem
+            with GlobalContext(message="Just Tree", doPrint=self.doPrint):
+                with toggleBlockSignals([self.uiInfluenceTREE]):
+                    for ind, nm in enumerate(self.dataOfSkin.driverNames):  # .shortDriverNames :
+                        theIndexJnt = self.dataOfSkin.indicesJoints[ind]
+                        theCol = self.uiInfluenceTREE.getDeformerColor(nm)
+                        jointItem = InfluenceTreeWidgetItem(
+                            nm, theIndexJnt, theCol, self.dataOfSkin.theSkinCluster
+                        )
 
-                jointItem.isZeroDfm = ind in self.dataOfSkin.hideColumnIndices
-                jointItem.setHidden(not self.showZeroDeformers and jointItem.isZeroDfm)
-            self.updateCurrentInfluence(self.previousInfluenceName)
+                        # jointItem =  QtWidgets.QTreeWidgetItem()
+                        # jointItem.setText(1, nm)
+                        self.uiInfluenceTREE.addTopLevelItem(jointItem)
+                        self.uiInfluenceTREE.dicWidgName[nm] = jointItem
+
+                        jointItem.isZeroDfm = ind in self.dataOfSkin.hideColumnIndices
+                        jointItem.setHidden(not self.showZeroDeformers and jointItem.isZeroDfm)
+                self.updateCurrentInfluence(self.previousInfluenceName)
         self.dgParallel_btn.setChecked(cmds.optionVar(q="evaluationMode") == 3)
         self.updateWarningBtn()
         self.showHideLocks(self.showLocks_btn.isChecked())
@@ -1544,7 +1552,7 @@ class SkinPaintWin(Window):
     def fixSparseArray(self):
         if self.isInPaint():
             mel.eval("setToolTo $gMove;")
-        with GlobalContext(message="fix Sparse Array", doPrint=False):
+        with GlobalContext(message="fix Sparse Array", doPrint=self.doPrint):
             prevSelection = cmds.ls(sl=True)
             skn = self.dataOfSkin.theSkinCluster
             if skn and cmds.objExists(skn):
@@ -1646,22 +1654,6 @@ class InfluenceTree(QtWidgets.QTreeWidget):
 
 class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
     isZeroDfm = False
-    _colors = [
-        (161, 105, 48),
-        (159, 161, 48),
-        (104, 161, 48),
-        (48, 161, 93),
-        (48, 161, 161),
-        (48, 103, 161),
-        (111, 48, 161),
-        (161, 48, 105),
-    ]
-
-    def getColors(self):
-        self._colors = []
-        for i in xrange(1, 9):
-            col = cmds.displayRGBColor("userDefined{0}".format(i), q=True)
-            self._colors.append([int(el * 255) for el in col])
 
     def __init__(self, influence, index, col, skinCluster):
         shortName = influence.split(":")[-1]
@@ -1685,7 +1677,6 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
 
         self.setBackground(1, self.regularBG)
         self.darkBG = QtGui.QBrush(QtGui.QColor(120, 120, 120))
-        self.getColors()
         self.setDisplay()
 
     def setDisplay(self):
@@ -1704,16 +1695,6 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
                 self._skinCluster + ".bindPreMatrix[{0}]".format(self._index), mat, type="matrix"
             )
 
-    """
-    def setColor(self, index):        
-        cmds.setAttr(self._influence+'.objectColor', index)
-
-        theCol = [col/250. for col in self._colors [index]]
-        cmds.setAttr(objAsStr+".overrideColorRGB", *theCol )
-        
-        self.setDisplay()
-    """
-
     def setColor(self, col):
         self.currentColor = col
         cmds.setAttr(self._influence + ".wireColorRGB", *col)
@@ -1721,10 +1702,9 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
 
     def color(self):
         return [255.0 * el for el in cmds.getAttr(self._influence + ".wireColorRGB")[0]]
-        # return self._colors[cmds.getAttr(self._influence+'.objectColor')]
 
     def lockIcon(self):
-        return getIcon("lock-gray-locked") if self.isLocked() else getIcon("lock-gray-unlocked")
+        return _icons["lockedIcon"] if self.isLocked() else _icons["unLockIcon"]
 
     def colorIcon(self):
         pixmap = QtGui.QPixmap(24, 24)
