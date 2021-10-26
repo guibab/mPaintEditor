@@ -4,6 +4,7 @@ self = __main__.paintEditor
 """
 # from mPaintEditor.brushTools.brushPythonFunctions import *
 
+from __future__ import print_function
 from Qt import QtGui, QtCore, QtWidgets
 
 # import shiboken2 as shiboken
@@ -480,12 +481,12 @@ class SkinPaintWin(Window):
         try:
             removeNameChangedCallback(self.renameCallBack)
         except RuntimeError:
-            print ("can't remove it ")
+            print("can't remove it ")
         deleteTheJobs("SkinPaintWin.refreshCallBack")
         cmds.scriptJob(kill=self.refreshSJ, force=True)
         for callBck in self.close_callback:
             OpenMaya.MSceneMessage.removeCallback(callBck)
-        print "callBack deleted"
+        print("callBack deleted")
 
     commandIndex = -1
     previousInfluenceName = ""
@@ -515,7 +516,7 @@ class SkinPaintWin(Window):
 
     def changeCommand(self, newCommand):
         commandText = self.commandArray[newCommand]
-        print commandText
+        print(commandText)
         if commandText in ["locks", "unLocks"]:
             self.valueSetter.setEnabled(False)
             self.widgetAbs.setEnabled(False)
@@ -550,7 +551,7 @@ class SkinPaintWin(Window):
         try:
             self.deleteCallBacks()
         except RuntimeError:
-            print "Error removeing callbacks"
+            print("Error removeing callbacks")
         # pos = self.pos()
         # size = self.size()
         # cmds.optionVar(clearArray= "SkinPaintWindow")
@@ -591,11 +592,11 @@ class SkinPaintWin(Window):
         if val:
             self.lock_btn.setIcon(_icons["lock"])
             cmds.scriptJob(kill=self.refreshSJ, force=True)
-            print "deleting callback"
+            print("deleting callback")
         else:
             self.lock_btn.setIcon(_icons["unlock"])
             self.refreshSJ = cmds.scriptJob(event=["SelectionChanged", self.refreshCallBack])
-            print "recreating callback"
+            print("recreating callback")
         self.unLock = not val
 
     def changePin(self, val):
@@ -684,7 +685,7 @@ class SkinPaintWin(Window):
 
     def setFocusToPanel(self):
         QtCore.QTimer.singleShot(10, self.parent().setFocus)
-        print "setFocusToPanel"
+        print("setFocusToPanel")
         for panel in cmds.getPanel(vis=True):
             if cmds.getPanel(to=panel) == "modelPanel":
                 cmds.setFocus(panel)
@@ -862,7 +863,7 @@ class SkinPaintWin(Window):
                 inList = [
                     "{1}.vtx[{0}]".format(el, self.dataOfSkin.deformedShape) for el in selVertices
                 ]
-                print nm, "\n", inList, "\n"
+                print(nm, "\n", inList, "\n")
         res = cmds.confirmDialog(
             t="remove Influences",
             m=message,

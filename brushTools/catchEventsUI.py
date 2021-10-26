@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 try:
     from Qt import QtGui, QtCore, QtWidgets
     from Qt import QtCompat
@@ -372,7 +374,7 @@ class CatchEventsWidget(QtWidgets.QWidget):
                             self.highlightBtns()
                         return False
                 elif event.key() == QtCore.Qt.Key_P:  # print info of the click press
-                    print ("P event caught")
+                    print("P event caught")
                     return True
                 elif event.key() == QtCore.Qt.Key_U:
                     # print "U Pressed"
@@ -457,7 +459,7 @@ class CatchEventsWidget(QtWidgets.QWidget):
                     if event.key() == QtCore.Qt.Key_M:
                         with disableUndoContext():
                             if self.testRunOnce():
-                                print "mirror active"
+                                print("mirror active")
                                 callPaintEditorFunction("mirrorActive_cb").toggle()
                         return True
         return False

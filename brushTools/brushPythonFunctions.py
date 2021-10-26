@@ -1,3 +1,4 @@
+from __future__ import print_function
 from maya import cmds, mel
 import re
 import time
@@ -544,7 +545,7 @@ def toolOnSetupEndDeferred():
         # result = "{} hours {} mins {} secs".format(*timeRes)
 
         callPaintEditorFunction("paintStart")
-        print "----- load BRUSH for {} in  [{:.2f} secs] ------".format(mshShape, completionTime)
+        print("----- load BRUSH for {} in  [{:.2f} secs] ------".format(mshShape, completionTime))
 
 
 def toolOnSetupEnd():
@@ -598,7 +599,7 @@ def escapePressed():
 def addWireFrameToMesh():
     wireframeCB = callPaintEditorFunction("wireframe_cb")
     if wireframeCB and not wireframeCB.isChecked():
-        print "no wireframe"
+        print("no wireframe")
         return
     theMesh = cmds.ls(sl=True, tr=True)[0]  # getMeshTransfrom()
     # print currentContext, theMesh
@@ -725,13 +726,13 @@ def deleteExistingColorSets():
 
 ######################### --------------CALL FROM BRUSH------------------------- ###############################################
 def cleanOpenUndo():
-    print "CALL cleanOpenUndo - pass"
+    print("CALL cleanOpenUndo - pass")
     # cmds.undoInfo(state=False)
     # cmds.undoInfo(chunkName="StartSkinBrush", openChunk=True)
 
 
 def cleanCloseUndo():
-    print "CALL cleanCloseUndo - pass"
+    print("CALL cleanCloseUndo - pass")
     # cmds.undoInfo(state=True)
     # cmds.undoInfo(closeChunk=True)
     # cmds.flushUndo()

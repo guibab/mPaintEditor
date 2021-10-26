@@ -1,3 +1,4 @@
+from __future__ import print_function
 from Qt import QtGui, QtCore, QtWidgets
 from maya import OpenMaya, OpenMayaUI, OpenMayaAnim, cmds, mel
 
@@ -156,4 +157,4 @@ class Orbit(object):
         if underCursor and cmds.objExists(underCursor):
             hitPoint = self.getValues(underCursor)
             self.orbitCamera(hitPoint)
-            print underCursor
+            print(underCursor)
