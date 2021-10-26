@@ -15,6 +15,7 @@ from pymel.core import PyNode
 
 from Qt import QtGui
 from mWeightEditor.tools.utils import GlobalContext
+from six.moves import range
 
 # To make your color choice reproducible, uncomment the following line:
 # random.seed(10)
@@ -96,7 +97,7 @@ def generate_new_color(existing_colors, pastel_factor=0.5, valueMult=0.5, satura
 def setColorsOnJoints():
     with UndoContext("setColorsOnJoints"):
         _colors = []
-        for i in xrange(1, 9):
+        for i in range(1, 9):
             col = cmds.displayRGBColor("userDefined{0}".format(i), q=True)
             _colors.append(col)
         for jnt in cmds.ls(type="joint"):
