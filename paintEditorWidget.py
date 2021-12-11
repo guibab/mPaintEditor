@@ -10,9 +10,9 @@ import os
 import re
 import numpy as np
 
-from mWeightEditor.tools.skinData import DataOfSkin
-from mWeightEditor.tools.spinnerSlider import ValueSetting
-from mWeightEditor.tools.utils import (
+from mWeightEditor.weightTools.skinData import DataOfSkin
+from mWeightEditor.weightTools.spinnerSlider import ValueSetting
+from mWeightEditor.weightTools.utils import (
     GlobalContext,
     toggleBlockSignals,
     deleteTheJobs,

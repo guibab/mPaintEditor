@@ -3,12 +3,11 @@ from __future__ import absolute_import
 from maya import cmds, mel
 import re
 import time
-import datetime
 from collections import OrderedDict
 import random
 
 from Qt import QtGui
-from mWeightEditor.tools.utils import GlobalContext
+from mWeightEditor.weightTools.utils import GlobalContext
 from six.moves import range
 
 # To make your color choice reproducible, uncomment the following line:
