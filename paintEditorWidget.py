@@ -9,7 +9,6 @@ from blurdev.gui import Window
 import os
 import re
 import numpy as np
-from dcc.maya.skinCluster import cmdSkinCluster
 
 from mWeightEditor.tools.skinData import DataOfSkin
 from mWeightEditor.tools.spinnerSlider import ValueSetting
@@ -22,6 +21,7 @@ from mWeightEditor.tools.utils import (
     SettingVariable,
 )
 
+from .brushTools import cmdSkinCluster
 from .brushTools.brushPythonFunctions import (
     UndoContext,
     setColorsOnJoints,
