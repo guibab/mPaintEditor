@@ -1,14 +1,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-try:
-    from Qt import QtGui, QtCore, QtWidgets
-    from Qt import QtCompat
-    from Qt.QtWidgets import QApplication, QSplashScreen, QDialog, QMainWindow
-except:
-    from PySide2 import QtGui, QtCore, QtWidgets
-    import shiboken2 as QtCompat
-    from PySide2.QtWidgets import QApplication, QSplashScreen, QDialog, QMainWindow
+from Qt import QtGui, QtCore, QtWidgets
+from Qt import QtCompat
+from Qt.QtWidgets import QApplication, QSplashScreen, QDialog, QMainWindow
 from maya import OpenMayaUI, cmds, mel
 import time
 from .brushPythonFunctions import (
@@ -21,12 +16,6 @@ from . import meshFnIntersection
 
 EVENTCATCHER = None
 ROOTWINDOW = None
-"""
-import catchEventsUI
-reload(catchEventsUI)
-EVENTCATCHER = catchEventsUI.CatchEventsWidget()
-EVENTCATCHER.open()
-"""
 
 
 def callMarkingMenu():
@@ -113,11 +102,11 @@ def rootWindow():
             return None
         # If the application does not have focus try to find A top level widget
         # that doesn t have a parent and is a QMainWindow or QDialog
-        if window == None:
+        if window is None:
             windows = []
             dialogs = []
             for w in QApplication.instance().topLevelWidgets():
-                if w.parent() == None:
+                if w.parent() is None:
                     if isinstance(w, QMainWindow):
                         windows.append(w)
                     elif isinstance(w, QDialog):
@@ -170,8 +159,6 @@ class CatchEventsWidget(QtWidgets.QWidget):
         self.testWireFrame = True
 
         self.rootWin = ROOTWINDOW  # rootWindow()
-        # ptr = OpenMayaUI.MQtUtil.mainWindow()
-        # self.mainMaya = QtCompat.wrapInstance(long(ptr), QtWidgets.QWidget)
 
         self.prevButton = self.lstButtons[0]
         self.prevQtButton = "add"
@@ -205,8 +192,6 @@ class CatchEventsWidget(QtWidgets.QWidget):
                 for key in listModelEditorKeys:
                     dic = {"query": True, key: True}
                     valDic[key] = cmds.modelEditor(panel, **dic)
-                # cmEnabled = cmds.modelEditor(panel, query=True, cmEnabled = True)
-                # selectionHiliteDisplay= cmds.modelEditor(panel, query=True, selectionHiliteDisplay = True)
                 self.restorePanels.append((panel, valDic))
                 cmds.modelEditor(panel, **dicPanel)
                 # GAMMA ENABLED
@@ -224,12 +209,8 @@ class CatchEventsWidget(QtWidgets.QWidget):
                 self.installFilters()
             self.setPanelsDisplayOn()
             self.show()
-        # print "THAT SHOULD BE OPEN"
 
     def installFilters(self):
-        # listModelPanels = [ el for el in cmds.getPanel(vis=True) if cmds.getPanel(to=el) == "modelPanel"]
-        # ptr = OpenMayaUI.MQtUtil.findControl(listModelPanels[0])
-        # model_panel = QtCompat.wrapInstance(long(ptr), QtWidgets.QWidget)
         self.EventFilterWidgetReceiver = [
             QtCompat.wrapInstance(long(OpenMayaUI.MQtUtil.findControl(el)), QtWidgets.QWidget)
             for el in cmds.getPanel(type="modelPanel")
@@ -239,7 +220,6 @@ class CatchEventsWidget(QtWidgets.QWidget):
         self.QApplicationInstance.installEventFilter(self)
 
     def removeFilters(self):
-        # self.hide()
         self.filterInstalled = False
         self.QApplicationInstance.removeEventFilter(self)
 
@@ -280,7 +260,7 @@ class CatchEventsWidget(QtWidgets.QWidget):
         callPaintEditorFunction("updateStrengthVal", value)
         try:
             cmds.floatSliderGrp("brSkinBrushStrength", edit=True, value=value)
-        except:
+        except Exception:
             pass
 
     def testRunOnce(self):
@@ -484,8 +464,3 @@ class CatchEventsWidget(QtWidgets.QWidget):
             if cmds.popupMenu("tempMM", exists=True):
                 cmds.deleteUI("tempMM")
             self.removeFilters()
-
-
-"""
-a = CatchEventsWidget()
-"""

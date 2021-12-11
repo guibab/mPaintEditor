@@ -6,12 +6,6 @@ import time
 import datetime
 from collections import OrderedDict
 import random
-from functools import partial
-
-from dcc.maya.skinCluster import getFastData
-import maya.OpenMaya as om
-import maya.OpenMayaAnim as oma
-from pymel.core import PyNode
 
 from Qt import QtGui
 from mWeightEditor.tools.utils import GlobalContext
@@ -33,13 +27,11 @@ class disableUndoContext(object):
     def __enter__(self):
         if self.disableUndo:
             cmds.undoInfo(stateWithoutFlush=False)
-            # cmds.undoInfo(state=False)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Turn refresh on again and raise errors if asked"""
         if self.disableUndo:
             cmds.undoInfo(stateWithoutFlush=True)
-            # cmds.undoInfo(state=True)
 
 
 class UndoContext(object):
@@ -48,7 +40,6 @@ class UndoContext(object):
     """
 
     def __init__(self, chunkName="myProcessTrue"):
-        # print "   [paintEditor] - ",chunkName
         self.chunkName = chunkName
 
     def __enter__(self):
@@ -133,16 +124,11 @@ def filterInfluences():
                 showItem = False
                 for txt in newTexts:
                     txt = txt.replace("*", ".*")
-                    showItem = re.search(txt, nm, re.IGNORECASE) != None
+                    showItem = re.search(txt, nm, re.IGNORECASE) is not None
                     if showItem:
                         break
             itemsState[i] = showItem
             cmds.treeView("brSkinBrushJointTree", edit=True, itemVisible=[nm, showItem])
-        """
-        else : 
-            for nm , item in self.uiInfluenceTREE.dicWidgName.iteritems():
-                item.setHidden(not self.showZeroDeformers and item.isZeroDfm )
-        """
 
 
 def addInfluences():
@@ -177,11 +163,6 @@ def addInfluences():
             )
             if res == "Yes":
                 cmds.skinCluster(skn, edit=True, lockWeights=False, weight=0.0, addInfluence=toAdd)
-                """
-                toSelect = range(self.uiInfluenceTREE.topLevelItemCount(), self.uiInfluenceTREE.topLevelItemCount()+len(toAdd))
-                cmds.evalDeferred(self.selectRefresh)
-                cmds.evalDeferred(partial(self.reselectIndices,toSelect))
-                """
 
 
 def removeUnusedInfluences(self):
@@ -239,14 +220,11 @@ def createWireframe(meshNode, hideOther=True, valAlpha=0.25):
         if cmds.objExists("SkinningWireframe"):
             cmds.delete("SkinningWireframe")
         prt = cmds.createNode("transform", n="SkinningWireframe", p=meshNode)
-        # prt,=cmds.parent(prt, w=True)
         for msh in meshes:
             loc = cmds.createNode("wireframeDisplay", p=prt, n="SkinningWireframeShape")
             cmds.connectAttr(msh + ".outMesh", loc + ".inMesh", f=True)
             cmds.setAttr(loc + ".ihi", False)
 
-            # print(msh+".nurbsTessellate")
-            # if cmds.objExists(msh+".nurbsTessellate"):
             if cmds.attributeQuery("nurbsTessellate", node=msh, exists=True):
                 cmds.setAttr(loc + ".enableSmooth", True)
         return prt
@@ -313,11 +291,9 @@ def setToDgMode():
             cmds.evaluationManager(mode=goodMode)
             cmds.optionVar(intValue=["revertParallelEvaluationMode", val])
             # Set everything in the entire scene dirty
-            #
             cmds.dgdirty(allPlugs=True)
         else:
             cmds.optionVar(intValue=["revertParallelEvaluationMode", 0])
-            # cmds.optionVar(q="evaluationMode")
 
 
 def retrieveParallelMode():
@@ -339,21 +315,21 @@ def toolOnSetupStart():
             if not cmds.optionVar(ex="autoSaveEnable"):
                 cmds.optionVar(intValue=["autoSaveEnable", 1])
             cmds.autoSave(enable=False)
+        # found that if not Shannon paint doesn't swap deformers
         cmds.optionVar(
             clearArray="colorShadedDisplay"
-        )  # found that if not Shannon paint doesn't swap deformers
+        )
         cmds.optionVar(
             intValueAppend=["colorShadedDisplay", 1]
-        )  # found that if not Shannon paint doesn't swap deformers
+        )
         cmds.optionVar(
             intValueAppend=["colorShadedDisplay", 1], intValue=["colorizeSkeleton", 1]
-        )  # found that if not Shannon paint doesn't swap deformers
+        )
 
         sel = cmds.ls(sl=True)
         cmds.optionVar(clearArray="brushPreviousSelection")
         for obj in sel:
             cmds.optionVar(stringValueAppend=["brushPreviousSelection", obj])
-        # addControllersToJoints()
         shapeSelected = getShapesSelected(returnTransform=True)
         if not shapeSelected:  # if nothing selected
             mshShape = mel.eval("global string $gSkinBrushMesh; $temp = $gSkinBrushMesh")
@@ -364,7 +340,7 @@ def toolOnSetupStart():
         else:
             cmds.select(shapeSelected)
         mshShapeSelected = getShapesSelected(returnTransform=False)
-        ## add nurbs Tesselate ################################################
+        # add nurbs Tesselate
         selectedNurbs = cmds.ls(mshShapeSelected, type="nurbsSurface")
 
         if selectedNurbs:
@@ -374,7 +350,6 @@ def toolOnSetupStart():
         # for colors
         for mshShape in cmds.ls(mshShapeSelected, type="mesh"):
             cmds.polyOptions(mshShape, colorShadedDisplay=True)
-            # mshShape = "pCylinderShape3"
             if not cmds.attributeQuery("lockedVertices", node=mshShape, exists=True):
                 cmds.addAttr(mshShape, longName="lockedVertices", dataType="Int32Array")
             cmds.setAttr(mshShape + ".colorSet", size=2)
@@ -383,7 +358,6 @@ def toolOnSetupStart():
             cmds.setAttr(mshShape + ".vertexColorSource", 2)
             cmds.setAttr(mshShape + ".displayColors", 1)
             cmds.setAttr(mshShape + ".displaySmoothMesh", 0)
-            # cmds.setAttr(mshShape +".backfaceCulling", 3)
         callEventCatcher()
 
 
@@ -397,8 +371,6 @@ def createMeshFromNurbs(att, prt):
     msh = cmds.createNode("mesh", p=prt, skipSelect=True, n="brushTmpDELETEthisMesh")
     cmds.connectAttr(nurbsTessellate + ".outputPolygon", msh + ".inMesh", f=True)
 
-    # cmds.setAttr(msh + ".smoothLevel", 3)
-    # cmds.setAttr(msh + ".displaySmoothMesh", 2)
     cmds.sets(msh, edit=True, forceElement="initialShadingGroup")
     return msh
 
@@ -468,7 +440,6 @@ def disconnectNurbs():
             tesselates = cmds.ls(cmds.listHistory(msh), type="nurbsTessellate") or []
             if tesselates:
                 toDelete.extend(tesselates)
-        # setSkinCluster(prt, True)
     cmds.delete(toDelete)
 
 
@@ -509,11 +480,8 @@ def deferredDisconnect(mshTesselate, msh):
 
 
 def callEventCatcher():
-    # print("-- callEventCatcher --")
-    # from mPaintEditor.brushTools import catchEventsUI
     from . import catchEventsUI
 
-    # print catchEventsUI.__file__
     if catchEventsUI.ROOTWINDOW is None:
         catchEventsUI.ROOTWINDOW = catchEventsUI.rootWindow()
     catchEventsUI.EVENTCATCHER = catchEventsUI.CatchEventsWidget()
@@ -521,14 +489,10 @@ def callEventCatcher():
 
 
 def closeEventCatcher():
-    # print("-- closeEventCatcher --")
     from . import catchEventsUI
 
     if hasattr(catchEventsUI, "EVENTCATCHER"):
         catchEventsUI.EVENTCATCHER.close()
-    """
-        mel.eval("setToolTo $gMove;")
-    """
 
 
 def toolOnSetupEndDeferred():
@@ -543,7 +507,7 @@ def toolOnSetupEndDeferred():
         # ------ compute time ----------------------------------
         startTime = cmds.optionVar(q="startTime")
         completionTime = time.time() - startTime
-        timeRes = str(datetime.timedelta(seconds=int(completionTime))).split(":")
+        # timeRes = str(datetime.timedelta(seconds=int(completionTime))).split(":")
         # result = "{} hours {} mins {} secs".format(*timeRes)
 
         callPaintEditorFunction("paintStart")
@@ -554,7 +518,6 @@ def toolOnSetupEnd():
     with UndoContext("toolOnSetupEnd"):
         toolOnSetupEndDeferred()
     cleanOpenUndo()
-    # cmds.evalDeferred(toolOnSetupEndDeferred)
 
 
 def toolOffCleanup():
@@ -563,7 +526,6 @@ def toolOffCleanup():
 
 
 def toolOffCleanupDeferred():
-    # print "finishing tool\n"
     with GlobalContext(message="toolOffCleanupDeferred", doPrint=False):
         if cmds.objExists("SkinningWireframe"):
             cmds.delete("SkinningWireframe")
@@ -603,9 +565,6 @@ def addWireFrameToMesh():
     if wireframeCB and not wireframeCB.isChecked():
         print("no wireframe")
         return
-    theMesh = cmds.ls(sl=True, tr=True)[0]  # getMeshTransfrom()
-    # print currentContext, theMesh
-    # createWireframe(theMesh)
 
 
 def updateWireFrameColorSoloMode(soloColor):
@@ -632,7 +591,6 @@ def setSoloMode(soloColor):
 
 
 def toggleSoloMode():
-    # print "brSkinBrush_pythonFunctions  toggleSoloMode "
     ctx = cmds.currentCtx()
     soloColor = cmds.brSkinBrushContext(ctx, q=True, soloColor=True)
     setSoloMode(not soloColor)
@@ -670,7 +628,6 @@ def fixOptionVarContext(**inputKargsToChange):
                     if "(multi-use)" in res:
                         lsMulti.add(nmFlag)
                         res.remove("(multi-use)")
-                    finishVal = res[2:]
                     dicExpectedArgs[nmFlag] = res[2:]
             newSpl = []
             for lne in spl:
@@ -726,7 +683,7 @@ def deleteExistingColorSets():
                     cmds.polyColorSet(obj, delete=True, colorSet=colSet)
 
 
-######################### --------------CALL FROM BRUSH------------------------- ###############################################
+# --------------CALL FROM BRUSH-------------------------
 def cleanOpenUndo():
     print("CALL cleanOpenUndo - pass")
     # cmds.undoInfo(state=False)
@@ -807,13 +764,3 @@ def updateDisplayStrengthOrSize(sizeAdjust, value):
             callPaintEditorFunction("updateSizeVal", value)
         else:
             callPaintEditorFunction("updateStrengthVal", value)
-
-
-"""
-jnt = "Model:Dfm_L_Clavicle_1"
-CTR = cmds.createNode( "controller", name="TMPcontrollerFORPAINTSKIN")
-cmds.connectAttr( jnt+".msg", CTR+".act")
-
-createNode controller -n "TESTcontroller";
-connectAttr "joint3.msg" "TESTcontroller.act";
-"""

@@ -1,16 +1,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
-from Qt import QtGui, QtCore, QtWidgets
-from maya import OpenMaya, OpenMayaUI, OpenMayaAnim, cmds, mel
-
-"""
-
-from mPaintEditor.brushTools import meshFnIntersection
-res = meshFnIntersection.Test()
-
-res.getOrbitPosi()
-
-"""
+from Qt import QtGui, QtCore
+from maya import OpenMaya, OpenMayaUI, cmds
 
 
 class Orbit(object):
@@ -47,7 +38,6 @@ class Orbit(object):
         return QtCore.QPoint(x, y), w, h
 
     def closest_mesh_intersection(self, meshFn, ray_source, ray_direction):
-        # meshFn = OpenMaya.MFnMesh(mesh_dag)
         # Making my Hit Point
         hit_point = OpenMaya.MFloatPoint()
 
@@ -103,10 +93,6 @@ class Orbit(object):
             theVert = arr[0]
             if returnVertex:
                 return theVert
-            # print "cmds.select (\"{}.vtx[{}]\", r=True)".format(self.meshName, theVert)
-
-            # hit_pnt = cmds.xform("{}.f[{}]".format(node, face_idx), q=True, ws=True, t=True)
-            # return hit_pnt[:3]
             return [hit_pnt.x, hit_pnt.y, hit_pnt.z]
         else:
             posi = cmds.xform(node, q=True, ws=True, t=True)
@@ -131,21 +117,12 @@ class Orbit(object):
         self.active_view.getCamera(current_camera)
         dagNode = OpenMaya.MFnDagNode(current_camera)
         cameraName = dagNode.partialPathName()
-        # print(cameraName, posiCenter)
         cmds.viewLookAt(cameraName, pos=posiCenter)
         cmds.camera(cameraName, e=True, worldCenterOfInterest=posiCenter, worldUp=[0, 1, 0])
-        # cmds.viewLookAt( camera, pos=(0.0, 1.0, 0.0) )
-        """
-        current_camera = OpenMaya.MDagPath()
-        real_camera = OpenMaya.MFnCamera(current_camera)
-        real_camera.setCenterOfInterestPoint(hit_pnt)
-        #cmds.camera("perspShape", e=True, worldCenterOfInterest=posiCenter, worldUp=[0,1,0])
-        """
 
     def getClosestVert(self, worldPos):
         thePos = worldPos - self.screenPos
         x, y = thePos.x(), (self.screenHeight - thePos.y())
-        # print x,y
         # making my ray source and direction
         ray_source = OpenMaya.MPoint()
         ray_direction = OpenMaya.MVector()

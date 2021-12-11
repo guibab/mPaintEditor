@@ -1,14 +1,7 @@
-"""
-import __main__
-self = __main__.paintEditor
-"""
-# from mPaintEditor.brushTools.brushPythonFunctions import *
-
 from __future__ import print_function
 from __future__ import absolute_import
 from Qt import QtGui, QtCore, QtWidgets
 
-# import shiboken2 as shiboken
 from functools import partial
 from maya import cmds, mel, OpenMaya
 import blurdev
@@ -41,8 +34,6 @@ from six.moves import range
 
 
 class ValueSettingPE(ValueSetting):
-    # def doSet(self, theVal):
-    #     self.mainWindow.value = theVal
     blockPostSet = False
 
     def postSet(self):
@@ -1421,15 +1412,6 @@ class SkinPaintWin(Window):
             # print influences
             toSel = influences[0]
             ind = self.dataOfSkin.driverNames.index(influences[0])
-            # self.brushFunctions.setInfluenceIndex(ind)
-        """
-        else : 
-            inflInd = self.brushFunctions.getCurrentInfluence()
-            if inflInd !=-1 :
-                with toggleBlockSignals([self.uiInfluenceTREE]): 
-                    self.uiInfluenceTREE.setCurrentItem(self.uiInfluenceTREE.topLevelItem(inflInd))
-        #    print "clear influence"
-        """
 
     def filterInfluences(self, newText):
         self.pinSelection_btn.setChecked(False)
@@ -1460,17 +1442,6 @@ class SkinPaintWin(Window):
         cmds.select(self.dataOfSkin.deformedShape)
         self.refresh(force=True)
 
-    # def getHighestInfluence(self, vtxIndex):
-    #     highestDriver = np.argmax(self.dataOfSkin.raw2dArray [vtxIndex] )
-    #     self.highestInfluence  = self.dataOfSkin.indicesJoints [highestDriver ]
-    #     return self.dataOfSkin.driverNames [highestDriver]
-
-    # def selectPickedInfluence(self):
-    #     if self.highestInfluence in self.dataOfSkin.indicesJoints:
-    #         highestDriver = self.dataOfSkin.indicesJoints.index(self.highestInfluence)
-    #         #print self.highestInfluence, highestDriver
-    #         self.uiInfluenceTREE.setCurrentItem(self.uiInfluenceTREE.topLevelItem(highestDriver))
-
     def refreshColorsAndLocks(self):
         for i in range(self.uiInfluenceTREE.topLevelItemCount()):
             item = self.uiInfluenceTREE.topLevelItem(i)
@@ -1479,16 +1450,12 @@ class SkinPaintWin(Window):
                 # we need a real update :
                 ind = item._index
                 item.currentColor = item.color()
-                # self.brushFunctions.setColor(ind, item.currentColor)
-                # print ind, item._influence
-        # self.brushFunctions.setBSDAttr( "getLockWeights", True)
 
     def refreshCallBack(self):
         if not self.lock_btn.isChecked():
             self.refresh()
 
     def refresh(self, force=False, renamedCalled=False):
-        # print "refresh CALLED ", force
         with GlobalContext(message="paintEditor getAllData", doPrint=self.doPrint):
             prevDataOfSkin = self.dataOfSkin.deformedShape, self.dataOfSkin.theDeformer
             resultData = self.dataOfSkin.getAllData(
@@ -1510,10 +1477,6 @@ class SkinPaintWin(Window):
             elif not resultData:
                 self.dataOfSkin.deformedShape, self.dataOfSkin.theDeformer = prevDataOfSkin
         if renamedCalled or resultData or force:
-            # print "- refreshing -"
-
-            # self.brushFunctions.setColorsOnJoints()
-            # self.brushFunctions.bsd = self.dataOfSkin.getConnectedBlurskinDisplay()
             self.uiInfluenceTREE.clear()
             self.uiInfluenceTREE.dicWidgName = {}
 
@@ -1543,8 +1506,6 @@ class SkinPaintWin(Window):
                             nm, theIndexJnt, theCol, self.dataOfSkin.theSkinCluster
                         )
 
-                        # jointItem =  QtWidgets.QTreeWidgetItem()
-                        # jointItem.setText(1, nm)
                         self.uiInfluenceTREE.addTopLevelItem(jointItem)
                         self.uiInfluenceTREE.dicWidgName[nm] = jointItem
 
@@ -1589,7 +1550,6 @@ class SkinPaintWin(Window):
                 self.__dict__[btnName].setEnabled(True)
             self.uiInfluenceTREE.setStyleSheet("QWidget {border : 2px solid red}\n")
             self.enterPaint_btn.setEnabled(False)
-            # self.updateUIwithContextValues()
 
             dicValues = {
                 "edit": True,
@@ -1650,12 +1610,10 @@ class InfluenceTree(QtWidgets.QTreeWidget):
         self.hideColumn(4)  # column 4 is the sorted by weight picked indices
 
     def enterEvent(self, event):
-        # print "enterEvent TREE"
         self.isOn = True
         super(InfluenceTree, self).enterEvent(event)
 
     def leaveEvent(self, event):
-        # print "leaveEvent TREE"
         self.isOn = False
         super(InfluenceTree, self).leaveEvent(event)
 
@@ -1751,8 +1709,3 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
 
     def showWeights(self, value):
         self.setText(2, str(value))
-
-
-# -------------------------------------------------------------------------------
-# COLOR
-# -------------------------------------------------------------------------------
