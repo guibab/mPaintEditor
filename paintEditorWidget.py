@@ -1,11 +1,15 @@
 from __future__ import print_function
 from __future__ import absolute_import
-from Qt import QtGui, QtCore, QtWidgets
+from Qt import QtGui, QtCore, QtWidgets, QtCompat
 
 from functools import partial
 from maya import cmds, mel, OpenMaya
-import blurdev
-from blurdev.gui import Window
+
+try:
+    from blurdev.gui import Window
+except ImportError:
+    from QtWidgets import QMainWindow as Window
+
 import os
 import re
 import numpy as np
@@ -99,6 +103,15 @@ def getIcon(iconNm):
     uiFolder, filename = os.path.split(fileVar)
     iconPth = os.path.join(uiFolder, "img", iconNm + ".png")
     return QtGui.QIcon(iconPth)
+
+
+def getUiFile(fileVar, subFolder="ui", uiName=None):
+    uiFolder, filename = os.path.split(fileVar)
+    if uiName is None:
+        uiName = os.path.splitext(filename)[0]
+    if subFolder:
+        uiFile = os.path.join(uiFolder, subFolder, uiName+".ui")
+    return uiFile
 
 
 _icons = {
@@ -237,30 +250,32 @@ lstShortCuts = [
     # ("update Value", "N"),
 ]
 
-###################################################################################
-#
-#   the window
-#
-###################################################################################
+
 class SkinPaintWin(Window):
     colWidth = 30
     maxWidthCentralWidget = 230
-
-    #####################################################################################
-    # EVENTCATCHER = None
+    valueMult = 0.6
+    saturationMult = 0.6
+    commandIndex = -1
+    previousInfluenceName = ""
+    value = 1.0
+    commandArray = ["add", "rmv", "addPerc", "abs", "smooth", "sharpen", "locks", "unLocks"]
+    highlightingBtn = False
 
     def __init__(self, parent=None):
         self.doPrint = False
         super(SkinPaintWin, self).__init__(parent)
-        import __main__
-
-        __main__.paintEditor = self
 
         if not cmds.pluginInfo("brSkinBrush", q=True, loaded=True):
             cmds.loadPlugin("brSkinBrush")
         if not cmds.pluginInfo("wireframeDisplay", q=True, loaded=True):
             cmds.loadPlugin("wireframeDisplay")
-        blurdev.gui.loadUi(__file__, self)
+        uiPath = getUiFile(__file__)
+        QtCompat.loadUi(uiPath, self)
+
+        # Get the names of all the child objects recursively
+        allobjs = self.findChildren(QtCore.QRegExp(".*"))
+        self._allobjs = {c.objectName(): c for c in allobjs}
 
         self.useShortestNames = (
             cmds.optionVar(q="useShortestNames")
@@ -292,7 +307,14 @@ class SkinPaintWin(Window):
             helpItem.setText(1, nm1)
             self.shortCut_Tree.addTopLevelItem(helpItem)
         self.shortCut_Tree.setStyleSheet(
-            "QTreeWidget::item { padding-right:5px;padding-left:5px;border-right: 1px solid grey;border-bottom: 1px solid grey;}"
+            """
+            QTreeWidget::item {
+                padding-right:5px;
+                padding-left:5px;
+                border-right: 1px solid grey;
+                border-bottom: 1px solid grey;
+            }
+            """
         )
         self.shortCut_Tree.setIndentation(0)
         self.shortCut_Tree.header().hide()
@@ -307,9 +329,7 @@ class SkinPaintWin(Window):
     def colorSelected(self, color):
         values = [color.red() / 255.0, color.green() / 255.0, color.blue() / 255.0]
         item = self.colorDialog.item
-        nm = item._influence
         ind = item._index
-        # print ind, nm, values
         item.setColor(values)
 
         self.refreshWeightEditor(getLocks=False)
@@ -317,22 +337,15 @@ class SkinPaintWin(Window):
             cmds.brSkinBrushContext("brSkinBrushContext1", e=True, refreshDfmColor=ind)
 
     def refreshWeightEditor(self, getLocks=True):
-        import __main__
-
-        if (
-            hasattr(__main__, "weightEditor")
-            and __main__.weightEditor in QtWidgets.QApplication.instance().topLevelWidgets()
-        ):
-            if getLocks:
-                __main__.weightEditor.dataOfDeformer.getLocksInfo()
-            __main__.weightEditor._tv.repaint()
+        if getLocks:
+            self.dataOfDeformer.getLocksInfo()
+        self._tv.repaint()
 
     def revertColor(self):
         self.colorDialog.setCurrentColor(self.colorDialog.cancelColor)
 
     def createColorPicker(self):
         self.colorDialog = QtWidgets.QColorDialog()
-        # self.colorDialog .colorSelected.connect( self.colorSelected )
         self.colorDialog.currentColorChanged.connect(self.colorSelected)
         self.colorDialog.rejected.connect(self.revertColor)
         self.colorDialog.setWindowFlags(QtCore.Qt.Tool)
@@ -355,16 +368,8 @@ class SkinPaintWin(Window):
         self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.showMainMenu)
 
-        # ------------------------------
         self.popMenu = QtWidgets.QMenu(self.uiInfluenceTREE)
-        """
-        chbox = QtWidgets.QCheckBox("auto Prune", self.popMenu)
-        chbox.setChecked(self.autoPrune)
-        chbox.toggled.connect(self.autoPruneChecked)
-        checkableAction = QtWidgets.QWidgetAction(self.popMenu)
-        checkableAction.setDefaultWidget(chbox)
-        self.popMenu.addAction(checkableAction)
-        """
+
         selectItems = self.popMenu.addAction("select node", partial(self.applyLock, "selJoints"))
         self.popMenu.addAction(selectItems)
         self.popMenu.addSeparator()
@@ -420,7 +425,6 @@ class SkinPaintWin(Window):
 
     def comboSoloColorChanged(self, ind):
         with UndoContext("comboSoloColorChanged"):
-            soloColorIndex = ind
             cmds.optionVar(intValue=["soloColor_SkinPaintWin", ind])
             for i in range(3):
                 self.subMenuSoloColor.actions()[i].setChecked(i == ind)
@@ -481,28 +485,22 @@ class SkinPaintWin(Window):
             OpenMaya.MSceneMessage.removeCallback(callBck)
         print("callBack deleted")
 
-    commandIndex = -1
-    previousInfluenceName = ""
-    value = 1.0
-    commandArray = ["add", "rmv", "addPerc", "abs", "smooth", "sharpen", "locks", "unLocks"]
-    highlightingBtn = False
-
     def highlightBtn(self, btnName):
         key = btnName + "_btn"
-        if key in self.__dict__:
-            thebtn = self.__dict__[key]
+        if key in self._allobjs:
+            thebtn = self._allobjs[key]
             thebtn.setChecked(True)
 
     def getCommandIndex(self):
         for ind, nm in enumerate(self.commandArray):
-            thebtn = self.__dict__[nm + "_btn"]
+            thebtn = self._allobjs[nm + "_btn"]
             if thebtn.isChecked():
                 return ind
         return -1
 
     def getEnabledButton(self):
         for ind, nm in enumerate(self.commandArray):
-            thebtn = self.__dict__[nm + "_btn"]
+            thebtn = self._allobjs[nm + "_btn"]
             if thebtn.isChecked():
                 return nm
         return False
@@ -533,7 +531,7 @@ class SkinPaintWin(Window):
                 self.valueSetter.commandArg = "strength"
             try:
                 cmds.floatSliderGrp("brSkinBrushStrength", edit=True, value=theValue)
-            except:
+            except Exception:
                 pass
             self.updateStrengthVal(theValue)
         if self.isInPaint():
@@ -545,16 +543,6 @@ class SkinPaintWin(Window):
             self.deleteCallBacks()
         except RuntimeError:
             print("Error removeing callbacks")
-        # pos = self.pos()
-        # size = self.size()
-        # cmds.optionVar(clearArray= "SkinPaintWindow")
-        # for el in pos.x(), pos.y(), size.width(), size.height():
-        #     cmds.optionVar(intValueAppend =("SkinPaintWindow", el))
-        # cmds.optionVar(intValueAppend =("SkinPaintWindow", self.commandIndex))
-        # self.storePrevCommandValue()
-
-        # self.headerView.deleteLater()
-        # if self.EVENTCATCHER!=None: self.EVENTCATCHER.close()
         super(SkinPaintWin, self).closeEvent(event)
 
     def addButtonsDirectSet(self, lstBtns):
@@ -578,10 +566,6 @@ class SkinPaintWin(Window):
         return theCarryWidget
 
     def changeLock(self, val):
-        allItems = [
-            self.uiInfluenceTREE.topLevelItem(ind)
-            for ind in range(self.uiInfluenceTREE.topLevelItemCount())
-        ]
         if val:
             self.lock_btn.setIcon(_icons["lock"])
             cmds.scriptJob(kill=self.refreshSJ, force=True)
@@ -625,19 +609,13 @@ class SkinPaintWin(Window):
                 item.setHidden(item.isLocked())
             self.showLocks_btn.setIcon(_icons["eye-half"])
 
-    def changeOfValue(self):
-        pass
-        # if cmds.currentCtx() == thePaintContextName:
-        #     currentVal = cmds.artAttrCtx(thePaintContextName ,q=True,value = True)
-        #     self.updateStrengthVal(currentVal)
-
     def isInPaint(self):
         currentContext = cmds.currentCtx()
         if currentContext.startswith("brSkinBrushContext"):
             return currentContext
         return False
 
-    def exitPaint(self, *args):  # *args for callBacks
+    def exitPaint(self, *args):
         with UndoContext("exitPaint"):
             if self.isInPaint():
                 mel.eval("setToolTo $gMove;")
@@ -648,10 +626,8 @@ class SkinPaintWin(Window):
             if not cmds.pluginInfo("brSkinBrush", query=True, loaded=True):
                 cmds.loadPlugin("brSkinBrush")
             if self.dataOfSkin.theSkinCluster:
-                # print "ENTERPAINT \n"
                 setColorsOnJoints()
                 context = "brSkinBrushContext1"
-                # "from brSkinBrush_pythonFunctions import "
                 dic = {
                     "soloColor": int(self.solo_rb.isChecked()),
                     "soloColorType": self.soloColor_cb.currentIndex(),
@@ -673,9 +649,7 @@ class SkinPaintWin(Window):
                 cmds.select(self.dataOfSkin.deformedShape, r=True)
                 cmds.setToolTo(context)
                 # try to fix bug
-                # mel.eval("rememberCtxSettings " + context)
                 self.getMirrorInfluenceArray()
-                # cmds.evalDeferred(self.setFocusToPanel)
 
     def setFocusToPanel(self):
         QtCore.QTimer.singleShot(10, self.parent().setFocus)
@@ -683,11 +657,6 @@ class SkinPaintWin(Window):
         for panel in cmds.getPanel(vis=True):
             if cmds.getPanel(to=panel) == "modelPanel":
                 cmds.setFocus(panel)
-
-    def updateOptionEnable(self, toggleValue):
-        setOn = self.smooth_btn.isChecked() or self.sharpen_btn.isChecked()
-        # for btn in [self.repeatBTN, self.depthBTN]:
-        #     btn.setEnabled(setOn)
 
     def upateSoloModeRBs(self, val):
         if val:
@@ -717,9 +686,8 @@ class SkinPaintWin(Window):
         )
         for i, influenceIndex in enumerate(orderOfJoints):
             allItems[influenceIndex].setText(4, "{:09d}".format(i))
-        if self.orderType_cb.currentIndex() == 3:  # sorting
+        if self.orderType_cb.currentIndex() == 3:
             self.uiInfluenceTREE.sortByColumn(4, 0)
-        # print orderOfJoints
 
     def sortByColumn(self, ind):
         dicColumnCorrespondance = dict([(0, 3), (1, 1), (2, 2), (3, 4)])
@@ -732,7 +700,6 @@ class SkinPaintWin(Window):
         # column 4 is the sorted by weight picked indices
 
     def updateCurrentInfluence(self, jointName):
-        # print "updateCurrentInfluence {}".format(jointName)
         items = {}
         ito = None
         for i in range(self.uiInfluenceTREE.topLevelItemCount()):
@@ -799,7 +766,6 @@ class SkinPaintWin(Window):
         for ind in toSelect:
             item = self.uiInfluenceTREE.topLevelItem(ind)
             if ind < count:
-                nm = item._influence
                 ind = item._index
                 item.color
                 values = generate_new_color(
@@ -824,12 +790,10 @@ class SkinPaintWin(Window):
 
     def reselectIndices(self, toSelect):
         count = self.uiInfluenceTREE.topLevelItemCount()
-        # if toSelect[-1] < count: self.uiInfluenceTREE.topLevelItem(ind).setCurrentItem(self.uiInfluenceTREE.topLevelItem(toSelect[-1]))
         for ind in toSelect:
             if ind < count:
                 self.uiInfluenceTREE.topLevelItem(ind).setSelected(True)
                 self.uiInfluenceTREE.scrollToItem(self.uiInfluenceTREE.topLevelItem(ind))
-        # self.uiInfluenceTREE.scrollToBottom()
 
     def removeInfluences(self):
         skn = self.dataOfSkin.theSkinCluster
@@ -873,7 +837,6 @@ class SkinPaintWin(Window):
             cmds.skinCluster(skn, e=True, removeInfluence=toRemove)
             cmds.skinCluster(skn, e=True, forceNormalizeWeights=True)
             cmds.evalDeferred(self.selectRefresh)
-            # res = self.dataOfSkin.display2dArray  [:,5]
 
     def removeUnusedInfluences(self):
         skn = self.dataOfSkin.theSkinCluster
@@ -899,13 +862,7 @@ class SkinPaintWin(Window):
                     cmds.skinCluster(skn, e=True, removeInfluence=zeroInfluences)
                     cmds.evalDeferred(self.selectRefresh)
 
-    valueMult, saturationMult = 0.6, 0.6
-
     def randomColors(self, selected=False):
-        # self.delete_btn.click()
-
-        golden_ratio_conjugate = 0.618033988749895
-        s, v = 0.5, 0.95
         colors = []
         lstItems = (
             self.uiInfluenceTREE.selectedItems()
@@ -917,13 +874,6 @@ class SkinPaintWin(Window):
         )
 
         for item in lstItems:
-            nm = item._influence
-            ind = item._index
-            """
-            h =( random.random() + golden_ratio_conjugate ) %1
-            theCol = QtGui.QColor.fromHsvF(h,s,v)
-            values = [theCol.redF(), theCol.greenF(), theCol.blueF()]
-            """
             values = generate_new_color(
                 colors,
                 pastel_factor=0.2,
@@ -932,16 +882,14 @@ class SkinPaintWin(Window):
             )
             colors.append(values)
 
-            # print ind,nm, values
             item.setColor(values)
         if self.isInPaint():
             cmds.brSkinBrushContext("brSkinBrushContext1", e=True, refresh=True)
-        # cmds.confirmDialog(m="randomColors")
 
     def createWindow(self):
         self.unLock = True
         self.unPin = True
-        dialogLayout = self.mainLayout  # self.layout()
+        dialogLayout = self.mainLayout
 
         # changing the treeWidghet
         for ind in range(dialogLayout.count()):
@@ -949,8 +897,6 @@ class SkinPaintWin(Window):
             if isinstance(it, QtWidgets.QWidgetItem) and it.widget() == self.uiInfluenceTREE:
                 break
         dialogLayout.setSpacing(0)
-        # for propName in ["selectionMode", "indentation","columnCount", "headerVisible", "headerDefaultSectionSize", "headerDefaultSectionSize", "headerVisible"]:
-        # dialogLayout.removeItem(it)
         self.uiInfluenceTREE.deleteLater()
 
         self.uiInfluenceTREE = InfluenceTree(self)
@@ -972,9 +918,7 @@ class SkinPaintWin(Window):
 
         self.delete_btn.setIcon(_icons["del"])
         self.delete_btn.setText("")
-        # self.delete_btn.clicked.connect(self.paintEnd )
         self.delete_btn.clicked.connect(self.exitPaint)
-        # self.delete_btn.clicked.connect(partial(self.mirrorActive_cb.setChecked, False))
 
         self.pinSelection_btn.setIcon(_icons["pinOff"])
         self.pinSelection_btn.toggled.connect(self.changePin)
@@ -1006,15 +950,14 @@ class SkinPaintWin(Window):
             ("randomColors", "randomColor"),
             ("fromScene", "fromScene"),
         ]:
-            theBtn = self.__dict__[btn + "_btn"]
+            theBtn = self._allobjs[btn + "_btn"]
             theBtn.setText("")
             theBtn.setIcon(_icons[icon])
-        # self.locks_btn.clicked.connect(lambda : self.locks_btn.setText("locks"))
         for ind, nm in enumerate(self.commandArray):
-            thebtn = self.__dict__[nm + "_btn"]
+            thebtn = self._allobjs[nm + "_btn"]
             thebtn.clicked.connect(partial(self.changeCommand, ind))
         for ind, nm in enumerate(["curveNone", "curveLinear", "curveSmooth", "curveNarrow"]):
-            thebtn = self.__dict__[nm + "_btn"]
+            thebtn = self._allobjs[nm + "_btn"]
             thebtn.setText("")
             thebtn.setIcon(_icons[nm])
             thebtn.setToolTip(nm)
@@ -1022,7 +965,7 @@ class SkinPaintWin(Window):
         self.flood_btn.clicked.connect(partial(self.brSkinConn, "flood", True))
 
         for nm in ["lock", "refresh", "pinSelection"]:
-            self.__dict__[nm + "_btn"].setText("")
+            self._allobjs[nm + "_btn"].setText("")
         self.uiToActivateWithPaint = [
             "pickVertex_btn",
             "pickInfluence_btn",
@@ -1030,7 +973,7 @@ class SkinPaintWin(Window):
             "mirrorActive_cb",
         ]
         for btnName in self.uiToActivateWithPaint:
-            self.__dict__[btnName].setEnabled(False)
+            self._allobjs[btnName].setEnabled(False)
         self.valueSetter = ValueSettingPE(
             self, precision=2, text="intensity", commandArg="strength", spacing=2
         )
@@ -1088,7 +1031,7 @@ class SkinPaintWin(Window):
             "verbose",
         ]
         for att in self.listCheckBoxesDirectAction:
-            checkBox = self.__dict__[att + "_cb"]
+            checkBox = self._allobjs[att + "_cb"]
             checkBox.toggled.connect(partial(self.brSkinConn, att))
         self.colorSets_rb.toggled.connect(partial(self.brSkinConn, "useColorSetsWhilePainting"))
         self.smoothRepeat_spn.valueChanged.connect(partial(self.brSkinConn, "smoothRepeat"))
@@ -1117,13 +1060,7 @@ class SkinPaintWin(Window):
         self.uiResetSymmetryBtn.clicked.connect(partial(self.uiSymmetryCB.setCurrentIndex, 0))
         self.uiSymmetryCB.currentIndexChanged.connect(self.symmetryChanged)
         self.uiTolerance_SB.valueChanged.connect(partial(self.brSkinConn, "toleranceMirror"))
-        # if cmds.optionVar(exists="mirrorOptions"):
-        #     leftText, rightText = cmds.optionVar(q="mirrorOptions")
-        #     self.uiLeftNamesLE.setText(leftText)
-        #     self.uiRightNamesLE.setText(rightText)
 
-        # self.uiLeftNamesLE.editingFinished.connect(self.storeMirrorOptions)
-        # self.uiRightNamesLE.editingFinished.connect(self.storeMirrorOptions)
         self.mirrorActive_cb.toggled.connect(self.changedMirrorActiveMode)
         self.uiLeftNamesLE.editingFinished.connect(self.getMirrorInfluenceArray)
         self.uiRightNamesLE.editingFinished.connect(self.getMirrorInfluenceArray)
@@ -1161,15 +1098,12 @@ class SkinPaintWin(Window):
         self.brSkinConn("minColor", val)
 
     def changeDGParallel(self, val):
-        # isDG = cmds.evaluationManager( q=True, mode=True) == [u'off']
         if val:
             self.dgParallel_btn.setText("parallel on")
             cmds.evaluationManager(mode="parallel")
         else:
             self.dgParallel_btn.setText("parallel off")
             cmds.evaluationManager(mode="off")
-        # val = cmds.optionVar(q="evaluationMode")
-        # cmds.evaluationManager(  mode=goodMode)
 
     def wireframeToggle(self, val):
         if not val and cmds.objExists("SkinningWireframe"):
@@ -1195,27 +1129,9 @@ class SkinPaintWin(Window):
 
     def fixUI(self):
         for nm in self.commandArray:
-            self.__dict__[nm + "_btn"].setMinimumHeight(23)
+            self._allobjs[nm + "_btn"].setMinimumHeight(23)
         self.valueSetter.updateBtn()
         self.sizeBrushSetter.updateBtn()
-
-    """
-    def recordSettings(self):
-        pref = prefs.find('tools/mPaintEditor', shared=True)
-        pref.recordProperty('geom', self.geometry())
-
-        self.solo_rb.setChecked(True)
-        #                self.multi_rb.setChecked(True)
-        self.soloColor_cb.setCurrentIndex(int(KArgs["soloColorType"]))
-
-        pref.save()
-
-    def restoreSettings(self):
-        pref = prefs.find('tools/mPaintEditor', shared=True)
-        geom = pref.restoreProperty('geom', QtCore.QRect())
-        if geom and not geom.isNull():
-            self.setGeometry(geom)
-    """
 
     def updateUIwithContextValues(self):
         with GlobalContext(message="updateUIwithContextValues", doPrint=self.doPrint):
@@ -1244,7 +1160,7 @@ class SkinPaintWin(Window):
             if "commandIndex" in KArgs:
                 commandIndex = int(KArgs["commandIndex"])
                 commandText = self.commandArray[commandIndex]
-                self.__dict__[commandText + "_btn"].setChecked(True)
+                self._allobjs[commandText + "_btn"].setChecked(True)
                 if commandText in ["locks", "unLocks"]:
                     self.valueSetter.setEnabled(False)
                     self.widgetAbs.setEnabled(False)
@@ -1256,7 +1172,7 @@ class SkinPaintWin(Window):
             if "curve" in KArgs:
                 curveIndex = int(KArgs["curve"])
                 nm = ["curveNone", "curveLinear", "curveSmooth", "curveNarrow"][curveIndex]
-                thebtn = self.__dict__[nm + "_btn"]
+                thebtn = self._allobjs[nm + "_btn"]
                 thebtn.setChecked(True)
             if "smoothStrength" in KArgs:
                 self.smoothStrengthVarStored = float(KArgs["smoothStrength"])
@@ -1289,7 +1205,7 @@ class SkinPaintWin(Window):
             for att in self.listCheckBoxesDirectAction:
                 if att in KArgs:
                     val = bool(int(KArgs[att]))
-                    self.__dict__[att + "_cb"].setChecked(val)
+                    self._allobjs[att + "_cb"].setChecked(val)
 
     def clearInputText(self):
         self.searchInfluences_le.clear()
@@ -1347,27 +1263,13 @@ class SkinPaintWin(Window):
                     self.colorDialog.setCurrentColor(self.colorDialog.cancelColor)
                 self.colorDialog.move(pos)
                 self.colorDialog.show()
-                """
-                theColor = [el/255. for el in item.color()]
-                cmds.colorEditor(mini=True, position=[pos.x(), pos.y()], rgbValue = theColor)
-                if cmds.colorEditor(query=True, result=True):
-                    values = cmds.colorEditor(query=True, rgb=True)
-                    nm = item._influence
-                    ind = item._index
-                    #print ind,nm, values
-                    self.brushFunctions.setColor(ind, values)
-                    item.setColor(values)
-                    #cmds.displayRGBColor("userDefined{0}".format(theUserDefinedIndex),*values)
-                """
 
     def influenceClicked(self, item, column):
         text = item._influence
-        # print "CLICKED " + text
         if self.isInPaint():
             cmds.brSkinBrushContext("brSkinBrushContext1", edit=True, influenceName=text)
 
     def applyLock(self, typeOfLock):
-        # ["lockSel","unlockSel","lockAllButSel","unlockAllButSel","clearLocks" ]
         autoHide = not self.showLocks_btn.isChecked()
         selectedItems = self.uiInfluenceTREE.selectedItems()
         allItems = [
@@ -1396,7 +1298,6 @@ class SkinPaintWin(Window):
             for item in allItems:
                 item.setLocked(item in selectedItems, autoHide=autoHide)
         if typeOfLock in ["clearLocks", "lockSel", "unlockSel", "lockAllButSel", "unlockAllButSel"]:
-            # self.brushFunctions.setBSDAttr( "getLockWeights", True)
             self.refreshWeightEditor(getLocks=True)
         if self.isInPaint():
             cmds.brSkinBrushContext("brSkinBrushContext1", e=True, refresh=True)
@@ -1405,13 +1306,6 @@ class SkinPaintWin(Window):
         selectedItems = self.uiInfluenceTREE.selectedItems()
         for item in selectedItems:
             item.resetBindPose()
-
-    def influenceSelChanged(self):
-        influences = self.selectedInfluences()
-        if len(influences) > 0:
-            # print influences
-            toSel = influences[0]
-            ind = self.dataOfSkin.driverNames.index(influences[0])
 
     def filterInfluences(self, newText):
         self.pinSelection_btn.setChecked(False)
@@ -1447,8 +1341,6 @@ class SkinPaintWin(Window):
             item = self.uiInfluenceTREE.topLevelItem(i)
             item.setDisplay()
             if item.currentColor != item.color():
-                # we need a real update :
-                ind = item._index
                 item.currentColor = item.color()
 
     def refreshCallBack(self):
@@ -1496,10 +1388,10 @@ class SkinPaintWin(Window):
                 "widget_paintBtns",
                 "option_GB",
             ]:
-                self.__dict__[uiObj].setEnabled(isPaintable)
+                self._allobjs[uiObj].setEnabled(isPaintable)
             with GlobalContext(message="Just Tree", doPrint=self.doPrint):
                 with toggleBlockSignals([self.uiInfluenceTREE]):
-                    for ind, nm in enumerate(self.dataOfSkin.driverNames):  # .shortDriverNames :
+                    for ind, nm in enumerate(self.dataOfSkin.driverNames):
                         theIndexJnt = self.dataOfSkin.indicesJoints[ind]
                         theCol = self.uiInfluenceTREE.getDeformerColor(nm)
                         jointItem = InfluenceTreeWidgetItem(
@@ -1536,18 +1428,17 @@ class SkinPaintWin(Window):
 
     def paintEnd(self):  # called by the brush
         for btnName in self.uiToActivateWithPaint:
-            self.__dict__[btnName].setEnabled(False)
+            self._allobjs[btnName].setEnabled(False)
         self.uiInfluenceTREE.setStyleSheet("")
         self.previousInfluenceName = cmds.brSkinBrushContext(
             "brSkinBrushContext1", q=True, influenceName=True
         )
         self.enterPaint_btn.setEnabled(True)
-        # self.changeMultiSolo(-1)
 
     def paintStart(self):  # called by the brush
         with UndoContext("paintstart"):
             for btnName in self.uiToActivateWithPaint:
-                self.__dict__[btnName].setEnabled(True)
+                self._allobjs[btnName].setEnabled(True)
             self.uiInfluenceTREE.setStyleSheet("QWidget {border : 2px solid red}\n")
             self.enterPaint_btn.setEnabled(False)
 
@@ -1569,12 +1460,12 @@ class SkinPaintWin(Window):
             for curveIndex, nm in enumerate(
                 ["curveNone", "curveLinear", "curveSmooth", "curveNarrow"]
             ):
-                thebtn = self.__dict__[nm + "_btn"]
+                thebtn = self._allobjs[nm + "_btn"]
                 if thebtn.isChecked():
                     dicValues["curve"] = curveIndex
                     break
             for att in self.listCheckBoxesDirectAction:
-                checkBox = self.__dict__[att + "_cb"]
+                checkBox = self._allobjs[att + "_cb"]
                 dicValues[att] = checkBox.isChecked()
             cmds.brSkinBrushContext("brSkinBrushContext1", **dicValues)
 
@@ -1594,7 +1485,7 @@ class InfluenceTree(QtWidgets.QTreeWidget):
                 if "_{0}_".format(letter) in driverName:
                     return col
             return self.regularBG
-        except:
+        except Exception:
             return self.regularBG
 
     def __init__(self, *args):
@@ -1651,7 +1542,7 @@ class InfluenceTreeWidgetItem(QtWidgets.QTreeWidgetItem):
         self._influence = influence
         self._index = index
         self._skinCluster = skinCluster
-        self.regularBG = col  # self.background(1)
+        self.regularBG = col
 
         self.currentColor = [
             255.0 * el for el in cmds.getAttr(self._influence + ".wireColorRGB")[0]
