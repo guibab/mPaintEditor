@@ -13,6 +13,7 @@ except ImportError:
 import os
 import re
 import numpy as np
+import weakref
 
 from mWeightEditor.weightTools.skinData import DataOfSkin
 from mWeightEditor.weightTools.spinnerSlider import ValueSetting
@@ -273,10 +274,6 @@ class SkinPaintWin(Window):
         uiPath = getUiFile(__file__)
         QtCompat.loadUi(uiPath, self)
 
-        # Get the names of all the child objects recursively
-        allobjs = self.findChildren(QtCore.QRegExp(".*"))
-        self._allobjs = {c.objectName(): c for c in allobjs}
-
         self.useShortestNames = (
             cmds.optionVar(q="useShortestNames")
             if cmds.optionVar(exists="useShortestNames")
@@ -486,22 +483,21 @@ class SkinPaintWin(Window):
         print("callBack deleted")
 
     def highlightBtn(self, btnName):
-        key = btnName + "_btn"
-        if key in self._allobjs:
-            thebtn = self._allobjs[key]
+        thebtn = self.findChild(QtWidgets.QPushButton, btnName + "_btn")
+        if thebtn:
             thebtn.setChecked(True)
 
     def getCommandIndex(self):
         for ind, nm in enumerate(self.commandArray):
-            thebtn = self._allobjs[nm + "_btn"]
-            if thebtn.isChecked():
+            thebtn = self.findChild(QtWidgets.QPushButton, btnName + "_btn")
+            if thebtn and thebtn.isChecked():
                 return ind
         return -1
 
     def getEnabledButton(self):
         for ind, nm in enumerate(self.commandArray):
-            thebtn = self._allobjs[nm + "_btn"]
-            if thebtn.isChecked():
+            thebtn = self.findChild(QtWidgets.QPushButton, btnName + "_btn")
+            if thebtn and thebtn.isChecked():
                 return nm
         return False
 
@@ -950,22 +946,29 @@ class SkinPaintWin(Window):
             ("randomColors", "randomColor"),
             ("fromScene", "fromScene"),
         ]:
-            theBtn = self._allobjs[btn + "_btn"]
-            theBtn.setText("")
-            theBtn.setIcon(_icons[icon])
+
+            thebtn = self.findChild(QtWidgets.QPushButton, btn + "_btn")
+            if thebtn:
+                thebtn.setText("")
+                thebtn.setIcon(_icons[icon])
         for ind, nm in enumerate(self.commandArray):
-            thebtn = self._allobjs[nm + "_btn"]
-            thebtn.clicked.connect(partial(self.changeCommand, ind))
+            thebtn = self.findChild(QtWidgets.QPushButton, nm + "_btn")
+            if thebtn:
+                thebtn.clicked.connect(partial(self.changeCommand, ind))
         for ind, nm in enumerate(["curveNone", "curveLinear", "curveSmooth", "curveNarrow"]):
-            thebtn = self._allobjs[nm + "_btn"]
-            thebtn.setText("")
-            thebtn.setIcon(_icons[nm])
-            thebtn.setToolTip(nm)
-            thebtn.clicked.connect(partial(self.brSkinConn, "curve", ind))
+            thebtn = self.findChild(QtWidgets.QPushButton, nm + "_btn")
+            if thebtn:
+                thebtn.setText("")
+                thebtn.setIcon(_icons[nm])
+                thebtn.setToolTip(nm)
+                thebtn.clicked.connect(partial(self.brSkinConn, "curve", ind))
         self.flood_btn.clicked.connect(partial(self.brSkinConn, "flood", True))
 
         for nm in ["lock", "refresh", "pinSelection"]:
-            self._allobjs[nm + "_btn"].setText("")
+            thebtn = self.findChild(QtWidgets.QPushButton, nm + "_btn")
+            if thebtn:
+                thebtn.setText("")
+
         self.uiToActivateWithPaint = [
             "pickVertex_btn",
             "pickInfluence_btn",
@@ -973,7 +976,10 @@ class SkinPaintWin(Window):
             "mirrorActive_cb",
         ]
         for btnName in self.uiToActivateWithPaint:
-            self._allobjs[btnName].setEnabled(False)
+            thebtn = self.findChild(QtWidgets.QPushButton, btnName)
+            if thebtn:
+                thebtn.setEnabled(False)
+
         self.valueSetter = ValueSettingPE(
             self, precision=2, text="intensity", commandArg="strength", spacing=2
         )
@@ -1031,8 +1037,9 @@ class SkinPaintWin(Window):
             "verbose",
         ]
         for att in self.listCheckBoxesDirectAction:
-            checkBox = self._allobjs[att + "_cb"]
-            checkBox.toggled.connect(partial(self.brSkinConn, att))
+            checkBox = self.findChild(QtWidgets.QCheckBox, att + "_cb")
+            if checkBox:
+                checkBox.toggled.connect(partial(self.brSkinConn, att))
         self.colorSets_rb.toggled.connect(partial(self.brSkinConn, "useColorSetsWhilePainting"))
         self.smoothRepeat_spn.valueChanged.connect(partial(self.brSkinConn, "smoothRepeat"))
 
@@ -1129,7 +1136,9 @@ class SkinPaintWin(Window):
 
     def fixUI(self):
         for nm in self.commandArray:
-            self._allobjs[nm + "_btn"].setMinimumHeight(23)
+            thebtn = self.findChild(QtWidgets.QPushButton, nm + "_btn")
+            if thebtn:
+                thebtn.setMinimumHeight(23)
         self.valueSetter.updateBtn()
         self.sizeBrushSetter.updateBtn()
 
@@ -1160,7 +1169,9 @@ class SkinPaintWin(Window):
             if "commandIndex" in KArgs:
                 commandIndex = int(KArgs["commandIndex"])
                 commandText = self.commandArray[commandIndex]
-                self._allobjs[commandText + "_btn"].setChecked(True)
+                thebtn = self.findChild(QtWidgets.QPushButton, commandText + "_btn")
+                if thebtn:
+                    thebtn.setChecked(True)
                 if commandText in ["locks", "unLocks"]:
                     self.valueSetter.setEnabled(False)
                     self.widgetAbs.setEnabled(False)
@@ -1172,8 +1183,9 @@ class SkinPaintWin(Window):
             if "curve" in KArgs:
                 curveIndex = int(KArgs["curve"])
                 nm = ["curveNone", "curveLinear", "curveSmooth", "curveNarrow"][curveIndex]
-                thebtn = self._allobjs[nm + "_btn"]
-                thebtn.setChecked(True)
+                thebtn = self.findChild(QtWidgets.QPushButton, nm + "_btn")
+                if thebtn:
+                    thebtn.setChecked(True)
             if "smoothStrength" in KArgs:
                 self.smoothStrengthVarStored = float(KArgs["smoothStrength"])
             else:
@@ -1205,7 +1217,9 @@ class SkinPaintWin(Window):
             for att in self.listCheckBoxesDirectAction:
                 if att in KArgs:
                     val = bool(int(KArgs[att]))
-                    self._allobjs[att + "_cb"].setChecked(val)
+                    checkBox = self.findChild(QtWidgets.QPushButton, att + "_cb")
+                    if checkBox:
+                        checkBox.setChecked(val)
 
     def clearInputText(self):
         self.searchInfluences_le.clear()
@@ -1388,7 +1402,10 @@ class SkinPaintWin(Window):
                 "widget_paintBtns",
                 "option_GB",
             ]:
-                self._allobjs[uiObj].setEnabled(isPaintable)
+                wid = self.findChild(QtWidgets.QWidget, uiObj)
+                if wid:
+                    wid.setEnabled(isPaintable)
+
             with GlobalContext(message="Just Tree", doPrint=self.doPrint):
                 with toggleBlockSignals([self.uiInfluenceTREE]):
                     for ind, nm in enumerate(self.dataOfSkin.driverNames):
@@ -1428,7 +1445,9 @@ class SkinPaintWin(Window):
 
     def paintEnd(self):  # called by the brush
         for btnName in self.uiToActivateWithPaint:
-            self._allobjs[btnName].setEnabled(False)
+            thebtn = self.findChild(QtWidgets.QPushButton, btnName)
+            if thebtn:
+                thebtn.setEnabled(False)
         self.uiInfluenceTREE.setStyleSheet("")
         self.previousInfluenceName = cmds.brSkinBrushContext(
             "brSkinBrushContext1", q=True, influenceName=True
@@ -1438,7 +1457,9 @@ class SkinPaintWin(Window):
     def paintStart(self):  # called by the brush
         with UndoContext("paintstart"):
             for btnName in self.uiToActivateWithPaint:
-                self._allobjs[btnName].setEnabled(True)
+                thebtn = self.findChild(QtWidgets.QPushButton, btnName)
+                if thebtn:
+                    thebtn.setEnabled(True)
             self.uiInfluenceTREE.setStyleSheet("QWidget {border : 2px solid red}\n")
             self.enterPaint_btn.setEnabled(False)
 
@@ -1460,13 +1481,14 @@ class SkinPaintWin(Window):
             for curveIndex, nm in enumerate(
                 ["curveNone", "curveLinear", "curveSmooth", "curveNarrow"]
             ):
-                thebtn = self._allobjs[nm + "_btn"]
-                if thebtn.isChecked():
+                thebtn = self.findChild(QtWidgets.QPushButton, nm + "_btn")
+                if thebtn and thebtn.isChecked():
                     dicValues["curve"] = curveIndex
                     break
             for att in self.listCheckBoxesDirectAction:
-                checkBox = self._allobjs[att + "_cb"]
-                dicValues[att] = checkBox.isChecked()
+                checkBox = self.findChild(QtWidgets.QCheckBox, att + "_cb")
+                if checkBox:
+                    dicValues[att] = checkBox.isChecked()
             cmds.brSkinBrushContext("brSkinBrushContext1", **dicValues)
 
 
