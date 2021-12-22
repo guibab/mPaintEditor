@@ -1,6 +1,6 @@
 from __future__ import print_function
 from __future__ import absolute_import
-from Qt import QtGui, QtCore, QtWidgets, QtCompat
+from .Qt import QtGui, QtCore, QtWidgets, QtCompat
 
 from functools import partial
 from maya import cmds, mel, OpenMaya
@@ -8,12 +8,11 @@ from maya import cmds, mel, OpenMaya
 try:
     from blurdev.gui import Window
 except ImportError:
-    from QtWidgets import QMainWindow as Window
+    from .Qt.QtWidgets import QMainWindow as Window
 
 import os
 import re
 import numpy as np
-import weakref
 
 from mWeightEditor.weightTools.skinData import DataOfSkin
 from mWeightEditor.weightTools.spinnerSlider import ValueSetting

@@ -1,9 +1,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from Qt import QtGui, QtCore, QtWidgets
-from Qt import QtCompat
-from Qt.QtWidgets import QApplication, QSplashScreen, QDialog, QMainWindow
+from ..Qt import QtGui, QtCore, QtWidgets
+from ..Qt import QtCompat
+from ..Qt.QtWidgets import QApplication, QSplashScreen, QDialog, QMainWindow
 from maya import OpenMayaUI, cmds, mel
 import time
 from .brushPythonFunctions import (

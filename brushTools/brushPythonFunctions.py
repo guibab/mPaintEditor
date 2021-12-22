@@ -6,7 +6,7 @@ import time
 from collections import OrderedDict
 import random
 
-from Qt import QtGui
+from ..Qt import QtGui
 from mWeightEditor.weightTools.utils import GlobalContext
 from six.moves import range
 
@@ -708,7 +708,7 @@ def getPaintEditor():
 def afterPaint():
     with UndoContext("afterPaint"):
         import __main__
-        from Qt.QtWidgets import QApplication
+        from ..Qt.QtWidgets import QApplication
 
         if (
             hasattr(__main__, "weightEditor")
