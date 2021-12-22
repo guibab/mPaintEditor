@@ -65,9 +65,10 @@ def callMarkingMenu():
     for ind, (txt, posi, btn, cmdInd) in enumerate(lstCommands):
         kwArgs["radialPosition"] = posi
         kwArgs["label"] = txt
-        cmd = "brSkinBrushContext -edit -commandIndex {} `currentCtx`;".format(cmdInd)
-        cmd += 'python("import __main__;__main__.paintEditor.' + btn + '_btn.click()");\n'
-        kwArgs["command"] = cmd
+        kwArgs["command"] = """\
+            brSkinBrushContext -edit -commandIndex {0} `currentCtx`;
+            python("import mPaintEditor;mPaintEditor.PAINT_EDITOR.{1}_btn.click()");
+            """.format(cmdInd, btn)
         cmds.menuItem("menuEditorMenuItem{0}".format(ind + 1), **kwArgs)
     kwArgs.pop("radialPosition", None)
     kwArgs["label"] = "solo color"
@@ -77,13 +78,12 @@ def callMarkingMenu():
     kwArgs["subMenu"] = False
     for ind, colType in enumerate(["white", "lava", "influence"]):
         kwArgs["label"] = colType
-        cmd = 'python("import __main__;__main__.paintEditor.updateSoloColor(' + str(ind) + ')");\n'
-        cmd += "brSkinBrushContext -edit -soloColorType {} `currentCtx`;".format(ind)
-        kwArgs["command"] = cmd
-
+        kwArgs["command"] = """\
+            python("import mPaintEditor;mPaintEditor.PAINT_EDITOR.updateSoloColor({0})");
+            brSkinBrushContext -edit -soloColorType {0} `currentCtx`;
+            """.format(ind)
         cmds.menuItem("menuEditorMenuItemCol{0}".format(ind + 1), **kwArgs)
     mel.eval("setParent -menu ..;")
-    # setParent -menu
     mel.eval("setParent -menu ..;")
 
 
