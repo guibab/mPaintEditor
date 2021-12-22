@@ -87,46 +87,6 @@ def callMarkingMenu():
     mel.eval("setParent -menu ..;")
 
 
-def rootWindow():
-    """
-    Returns the currently active QT main window
-    Only works for QT UIs like Maya
-    """
-    # for MFC apps there should be no root window
-    window = None
-    if QApplication.instance():
-        inst = QApplication.instance()
-        window = inst.activeWindow()
-        # Ignore QSplashScreen s, they should never be considered the root window.
-        if isinstance(window, QSplashScreen):
-            return None
-        # If the application does not have focus try to find A top level widget
-        # that doesn t have a parent and is a QMainWindow or QDialog
-        if window is None:
-            windows = []
-            dialogs = []
-            for w in QApplication.instance().topLevelWidgets():
-                if w.parent() is None:
-                    if isinstance(w, QMainWindow):
-                        windows.append(w)
-                    elif isinstance(w, QDialog):
-                        dialogs.append(w)
-            if windows:
-                window = windows[0]
-            elif dialogs:
-                window = dialogs[0]
-        # grab the root window
-        if window:
-            while True:
-                parent = window.parent()
-                if not parent:
-                    break
-                if isinstance(parent, QSplashScreen):
-                    break
-                window = parent
-    return window
-
-
 class CatchEventsWidget(QtWidgets.QWidget):
     # transparent widget over viewport to catch rightclicks
     verbose = False
@@ -158,7 +118,7 @@ class CatchEventsWidget(QtWidgets.QWidget):
         self.shiftPressed = False
         self.testWireFrame = True
 
-        self.rootWin = ROOTWINDOW  # rootWindow()
+        self.rootWin = ROOTWINDOW
 
         self.prevButton = self.lstButtons[0]
         self.prevQtButton = "add"
@@ -226,7 +186,6 @@ class CatchEventsWidget(QtWidgets.QWidget):
     def highlightBtns(self):
         btnQtToSelect = ""
         btnMayaToSelect = ""
-        showStrenghtValue = False
         if self.shiftPressed and self.ctrlPressed:
             btnQtToSelect = "sharpen"
             btnMayaToSelect = "brSkinBrushSharpenRb"

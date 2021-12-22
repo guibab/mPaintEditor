@@ -8,6 +8,8 @@ import random
 
 from ..Qt import QtGui
 from mWeightEditor.weightTools.utils import GlobalContext
+from ..utils import rootWindow
+
 from six.moves import range
 
 # To make your color choice reproducible, uncomment the following line:
