@@ -1,9 +1,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from Qt import QtGui, QtCore, QtWidgets
-from Qt import QtCompat
-from Qt.QtWidgets import QApplication, QSplashScreen, QDialog, QMainWindow
+from ..Qt import QtGui, QtCore, QtWidgets
+from ..Qt import QtCompat
+from ..Qt.QtWidgets import QApplication, QSplashScreen, QDialog, QMainWindow
 from maya import OpenMayaUI, cmds, mel
 import time
 from .brushPythonFunctions import (
@@ -65,9 +65,10 @@ def callMarkingMenu():
     for ind, (txt, posi, btn, cmdInd) in enumerate(lstCommands):
         kwArgs["radialPosition"] = posi
         kwArgs["label"] = txt
-        cmd = "brSkinBrushContext -edit -commandIndex {} `currentCtx`;".format(cmdInd)
-        cmd += 'python("import __main__;__main__.paintEditor.' + btn + '_btn.click()");\n'
-        kwArgs["command"] = cmd
+        kwArgs["command"] = """\
+            brSkinBrushContext -edit -commandIndex {0} `currentCtx`;
+            python("import mPaintEditor;mPaintEditor.PAINT_EDITOR.{1}_btn.click()");
+            """.format(cmdInd, btn)
         cmds.menuItem("menuEditorMenuItem{0}".format(ind + 1), **kwArgs)
     kwArgs.pop("radialPosition", None)
     kwArgs["label"] = "solo color"
@@ -77,54 +78,13 @@ def callMarkingMenu():
     kwArgs["subMenu"] = False
     for ind, colType in enumerate(["white", "lava", "influence"]):
         kwArgs["label"] = colType
-        cmd = 'python("import __main__;__main__.paintEditor.updateSoloColor(' + str(ind) + ')");\n'
-        cmd += "brSkinBrushContext -edit -soloColorType {} `currentCtx`;".format(ind)
-        kwArgs["command"] = cmd
-
+        kwArgs["command"] = """\
+            python("import mPaintEditor;mPaintEditor.PAINT_EDITOR.updateSoloColor({0})");
+            brSkinBrushContext -edit -soloColorType {0} `currentCtx`;
+            """.format(ind)
         cmds.menuItem("menuEditorMenuItemCol{0}".format(ind + 1), **kwArgs)
     mel.eval("setParent -menu ..;")
-    # setParent -menu
     mel.eval("setParent -menu ..;")
-
-
-def rootWindow():
-    """
-    Returns the currently active QT main window
-    Only works for QT UIs like Maya
-    """
-    # for MFC apps there should be no root window
-    window = None
-    if QApplication.instance():
-        inst = QApplication.instance()
-        window = inst.activeWindow()
-        # Ignore QSplashScreen s, they should never be considered the root window.
-        if isinstance(window, QSplashScreen):
-            return None
-        # If the application does not have focus try to find A top level widget
-        # that doesn t have a parent and is a QMainWindow or QDialog
-        if window is None:
-            windows = []
-            dialogs = []
-            for w in QApplication.instance().topLevelWidgets():
-                if w.parent() is None:
-                    if isinstance(w, QMainWindow):
-                        windows.append(w)
-                    elif isinstance(w, QDialog):
-                        dialogs.append(w)
-            if windows:
-                window = windows[0]
-            elif dialogs:
-                window = dialogs[0]
-        # grab the root window
-        if window:
-            while True:
-                parent = window.parent()
-                if not parent:
-                    break
-                if isinstance(parent, QSplashScreen):
-                    break
-                window = parent
-    return window
 
 
 class CatchEventsWidget(QtWidgets.QWidget):
@@ -158,7 +118,7 @@ class CatchEventsWidget(QtWidgets.QWidget):
         self.shiftPressed = False
         self.testWireFrame = True
 
-        self.rootWin = ROOTWINDOW  # rootWindow()
+        self.rootWin = ROOTWINDOW
 
         self.prevButton = self.lstButtons[0]
         self.prevQtButton = "add"
@@ -226,7 +186,6 @@ class CatchEventsWidget(QtWidgets.QWidget):
     def highlightBtns(self):
         btnQtToSelect = ""
         btnMayaToSelect = ""
-        showStrenghtValue = False
         if self.shiftPressed and self.ctrlPressed:
             btnQtToSelect = "sharpen"
             btnMayaToSelect = "brSkinBrushSharpenRb"

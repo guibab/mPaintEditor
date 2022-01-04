@@ -6,8 +6,10 @@ import time
 from collections import OrderedDict
 import random
 
-from Qt import QtGui
+from ..Qt import QtGui
 from mWeightEditor.weightTools.utils import GlobalContext
+from ..utils import rootWindow
+
 from six.moves import range
 
 # To make your color choice reproducible, uncomment the following line:
@@ -698,23 +700,18 @@ def cleanCloseUndo():
 
 def getPaintEditor():
     with UndoContext("getPaintEditor"):
-        import __main__
-
-        if hasattr(__main__, "paintEditor") and __main__.paintEditor.isVisible():
-            return __main__.paintEditor
+        import mPaintEditor
+        if mPaintEditor.PAINT_EDITOR.isVisible():
+            return mPaintEditor.PAINT_EDITOR
         return None
 
 
 def afterPaint():
     with UndoContext("afterPaint"):
-        import __main__
-        from Qt.QtWidgets import QApplication
-
-        if (
-            hasattr(__main__, "weightEditor")
-            and __main__.weightEditor in QApplication.instance().topLevelWidgets()
-        ):
-            __main__.weightEditor.refreshSkinDisplay()
+        import mWeightEditor
+        from ..Qt.QtWidgets import QApplication
+        if mWeightEditor.WEIGHT_EDITOR in QApplication.instance().topLevelWidgets():
+            mWeightEditor.WEIGHT_EDITOR.refreshSkinDisplay()
 
 
 def callPaintEditorFunction(function, *args, **kwargs):
