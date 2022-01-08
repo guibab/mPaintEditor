@@ -2,6 +2,8 @@ from __future__ import print_function
 from __future__ import absolute_import
 from maya import cmds, OpenMaya as om, OpenMayaAnim as oma
 import six
+from six.moves import range
+from six.moves import zip
 
 
 def getThreeIndices(div_s, div_t, div_u, *args):
@@ -121,7 +123,7 @@ def reloadSkin(skinClusterName, newGeometrie=None, resetBindAtt=True):
 
     listBindPreMat = {}
     listInfluenceColor = {}
-    for influenceName, influencesIndex in influencesIndices.iteritems():
+    for influenceName, influencesIndex in six.iteritems(influencesIndices):
         bindPreAtt = "{}.bindPreMatrix[{}]".format(skinClusterName, influencesIndex)
         bindPreConn = cmds.listConnections(bindPreAtt, s=True, d=False, p=True)
         if bindPreConn:
@@ -207,7 +209,7 @@ def reloadSkin(skinClusterName, newGeometrie=None, resetBindAtt=True):
 
     # reset the weights
     undoValues = om.MDoubleArray()
-    tmpInflInd = range(len(lstInfluences))
+    tmpInflInd = list(range(len(lstInfluences)))
     tmpInflInd = om.MIntArray(len(lstInfluences))
     for i in range(len(lstInfluences)):
         tmpInflInd.set(i, i)
@@ -216,7 +218,7 @@ def reloadSkin(skinClusterName, newGeometrie=None, resetBindAtt=True):
     )
 
     # reconnect the Atts -----------------------
-    for influenceName, influencesIndex in influencesIndicesNew.iteritems():
+    for influenceName, influencesIndex in six.iteritems(influencesIndicesNew):
         bindPreAtt = "{}.bindPreMatrix[{}]".format(newSkinName, influencesIndex)
         bindPreValue = listBindPreMat[influenceName]
         if isinstance(bindPreValue, six.string_types):

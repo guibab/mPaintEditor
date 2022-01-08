@@ -6,6 +6,7 @@ from ..Qt import QtCompat
 from ..Qt.QtWidgets import QApplication, QSplashScreen, QDialog, QMainWindow
 from maya import OpenMayaUI, cmds, mel
 import time
+import six
 from .brushPythonFunctions import (
     callPaintEditorFunction,
     escapePressed,
@@ -172,7 +173,7 @@ class CatchEventsWidget(QtWidgets.QWidget):
 
     def installFilters(self):
         self.EventFilterWidgetReceiver = [
-            QtCompat.wrapInstance(long(OpenMayaUI.MQtUtil.findControl(el)), QtWidgets.QWidget)
+            QtCompat.wrapInstance(six.integer_types[-1](OpenMayaUI.MQtUtil.findControl(el)), QtWidgets.QWidget)
             for el in cmds.getPanel(type="modelPanel")
         ]
 

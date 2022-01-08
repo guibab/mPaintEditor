@@ -11,6 +11,9 @@ from mWeightEditor.weightTools.utils import GlobalContext
 from ..utils import rootWindow
 
 from six.moves import range
+import six
+from six.moves import map
+from six.moves import zip
 
 # To make your color choice reproducible, uncomment the following line:
 # random.seed(10)
@@ -147,7 +150,7 @@ def addInfluences():
             sel.remove(prt)
 
         allInfluences = cmds.skinCluster(skn, query=True, influence=True)
-        toAdd = filter(lambda x: x not in allInfluences, sel)
+        toAdd = [x for x in sel if x not in allInfluences]
         if toAdd:
             toAddStr = "add Influences :\n - "
             toAddStr += "\n - ".join(toAdd[:10])
@@ -654,7 +657,7 @@ def fixOptionVarContext(**inputKargsToChange):
             # now rebuild command ---------------------------------
             kwargs.update(inputKargsToChange)
             cmdNew = "brSkinBrushContext "
-            for key, value in kwargs.iteritems():
+            for key, value in six.iteritems(kwargs):
                 if isinstance(value, bool):
                     cmdNew += "-{} ".format(key)
                 else:
@@ -735,7 +738,7 @@ def headsUpMessage(offsetX, offsetY, message, valueDisplay, precision):
 
 
 def orderedInfluence(strl):
-    orderOfJoints = map(int, strl[:-1].split(" "))
+    orderOfJoints = list(map(int, strl[:-1].split(" ")))
     callPaintEditorFunction("updateOrderOfInfluences", orderOfJoints)
 
 
