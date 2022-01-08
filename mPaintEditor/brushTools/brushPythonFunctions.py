@@ -484,7 +484,7 @@ def callEventCatcher():
     from . import catchEventsUI
 
     if catchEventsUI.ROOTWINDOW is None:
-        catchEventsUI.ROOTWINDOW = catchEventsUI.rootWindow()
+        catchEventsUI.ROOTWINDOW = rootWindow()
     catchEventsUI.EVENTCATCHER = catchEventsUI.CatchEventsWidget()
     catchEventsUI.EVENTCATCHER.open()
 
@@ -701,8 +701,9 @@ def cleanCloseUndo():
 def getPaintEditor():
     with UndoContext("getPaintEditor"):
         import mPaintEditor
-        if mPaintEditor.PAINT_EDITOR.isVisible():
-            return mPaintEditor.PAINT_EDITOR
+        editor = mPaintEditor.PAINT_EDITOR
+        if editor is not None and editor.isVisible():
+            return editor
         return None
 
 
@@ -710,8 +711,9 @@ def afterPaint():
     with UndoContext("afterPaint"):
         import mWeightEditor
         from ..Qt.QtWidgets import QApplication
-        if mWeightEditor.WEIGHT_EDITOR in QApplication.instance().topLevelWidgets():
-            mWeightEditor.WEIGHT_EDITOR.refreshSkinDisplay()
+        editor = mWeightEditor.WEIGHT_EDITOR
+        if editor is not None and editor in QApplication.instance().topLevelWidgets():
+            editor.refreshSkinDisplay()
 
 
 def callPaintEditorFunction(function, *args, **kwargs):
