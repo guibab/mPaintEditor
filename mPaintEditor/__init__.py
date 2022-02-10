@@ -6,7 +6,7 @@ PAINT_EDITOR_ROOT = None
 
 def runMPaintEditor():
     from .utils import rootWindow
-    from .weightEditorWidget import SkinWeightWin
+    from .paintEditorWidget import SkinPaintWin
 
     # Keep global references around, otherwise they get GC'd
     global PAINT_EDITOR
@@ -15,7 +15,7 @@ def runMPaintEditor():
     # make and show the UI
     if PAINT_EDITOR_ROOT is None:
         PAINT_EDITOR_ROOT = rootWindow()
-    PAINT_EDITOR = SkinWeightWin(parent=PAINT_EDITOR_ROOT)
+    PAINT_EDITOR = SkinPaintWin(parent=PAINT_EDITOR_ROOT)
     PAINT_EDITOR.show()
 
 

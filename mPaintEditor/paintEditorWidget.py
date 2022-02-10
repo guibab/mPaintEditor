@@ -4,6 +4,7 @@ from .Qt import QtGui, QtCore, QtWidgets, QtCompat
 
 from functools import partial
 from maya import cmds, mel, OpenMaya
+import six
 
 try:
     from blurdev.gui import Window
@@ -726,7 +727,7 @@ class SkinPaintWin(Window):
         if prt in sel:
             sel.remove(prt)
         allInfluences = cmds.skinCluster(skn, query=True, influence=True)
-        toAdd = filter(lambda x: x not in allInfluences, sel)
+        toAdd = [x for x in sel if x not in allInfluences]
         if toAdd:
             toAddStr = "add Influences :\n - "
             toAddStr += "\n - ".join(toAdd[:10])
@@ -1326,7 +1327,7 @@ class SkinPaintWin(Window):
             newTexts = newText.split(" ")
             while "" in newTexts:
                 newTexts.remove("")
-            for nm, it in self.uiInfluenceTREE.dicWidgName.iteritems():
+            for nm, it in six.iteritems(self.uiInfluenceTREE.dicWidgName):
                 foundText = False
                 for txt in newTexts:
                     txt = txt.replace("*", ".*")
@@ -1335,7 +1336,7 @@ class SkinPaintWin(Window):
                         break
                 it.setHidden(not foundText)
         else:
-            for nm, item in self.uiInfluenceTREE.dicWidgName.iteritems():
+            for nm, item in six.iteritems(self.uiInfluenceTREE.dicWidgName):
                 item.setHidden(not self.showZeroDeformers and item.isZeroDfm)
 
     def refreshBtn(self):
