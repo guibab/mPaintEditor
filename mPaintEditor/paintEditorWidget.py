@@ -488,17 +488,17 @@ class SkinPaintWin(Window):
             thebtn.setChecked(True)
 
     def getCommandIndex(self):
-        for ind, nm in enumerate(self.commandArray):
+        for ind, btnName in enumerate(self.commandArray):
             thebtn = self.findChild(QtWidgets.QPushButton, btnName + "_btn")
             if thebtn and thebtn.isChecked():
                 return ind
         return -1
 
     def getEnabledButton(self):
-        for ind, nm in enumerate(self.commandArray):
+        for ind, btnName in enumerate(self.commandArray):
             thebtn = self.findChild(QtWidgets.QPushButton, btnName + "_btn")
             if thebtn and thebtn.isChecked():
-                return nm
+                return btnName
         return False
 
     def changeCommand(self, newCommand):
@@ -683,11 +683,11 @@ class SkinPaintWin(Window):
         for i, influenceIndex in enumerate(orderOfJoints):
             allItems[influenceIndex].setText(4, "{:09d}".format(i))
         if self.orderType_cb.currentIndex() == 3:
-            self.uiInfluenceTREE.sortByColumn(4, 0)
+            self.uiInfluenceTREE.sortByColumn(4, QtCore.Qt.AscendingOrder)#0
 
     def sortByColumn(self, ind):
         dicColumnCorrespondance = dict([(0, 3), (1, 1), (2, 2), (3, 4)])
-        self.uiInfluenceTREE.sortByColumn(dicColumnCorrespondance[ind], 0)
+        self.uiInfluenceTREE.sortByColumn(dicColumnCorrespondance[ind], QtCore.Qt.AscendingOrder)#0
         selItems = self.uiInfluenceTREE.selectedItems()
         if selItems:
             self.uiInfluenceTREE.scrollToItem(selItems[-1])
